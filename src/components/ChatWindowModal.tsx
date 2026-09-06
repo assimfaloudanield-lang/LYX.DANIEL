@@ -181,7 +181,7 @@ export const ChatWindowModal: React.FC<ChatWindowModalProps> = ({
         </header>
 
         {/* CORPO DE MENSAGENS COM AUTO-SCROLL */}
-        <div className="flex-1 overflow-y-auto px-4 py-3.5 space-y-3 scroll-smooth">
+        <div className="flex-1 overflow-y-auto px-4 py-3.5 space-y-3 scroll-smooth min-h-0">
           {messages.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-center p-6 space-y-2.5">
               <div className="w-14 h-14 rounded-full overflow-hidden p-1 bg-gradient-to-tr from-blue-100 via-indigo-50 to-purple-100 shadow-inner flex items-center justify-center">
@@ -264,7 +264,7 @@ export const ChatWindowModal: React.FC<ChatWindowModalProps> = ({
         </div>
 
         {/* BARRA DE ENTRADA DO CHAT */}
-        <footer className="p-3 border-t border-slate-100/90 bg-white/80 backdrop-blur-xl shrink-0">
+        <div className="p-3 border-t border-slate-100/90 bg-white/80 backdrop-blur-xl shrink-0">
           <div className="relative flex items-center gap-2 rounded-2xl bg-slate-100/80 border border-slate-200/70 px-3 py-1.5 focus-within:bg-white focus-within:border-blue-400/80 focus-within:ring-2 focus-within:ring-blue-100 transition-all">
             
             {/* Botão de Mic */}
@@ -331,7 +331,7 @@ export const ChatWindowModal: React.FC<ChatWindowModalProps> = ({
               <Send size={13} />
             </button>
           </div>
-        </footer>
+        </div>
       </div>
     </div>
   );

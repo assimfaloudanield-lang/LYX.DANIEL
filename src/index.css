@@ -21,4 +21,6 @@ html, body, #root {
   background-color: #030014;
   user-select: none;
   -webkit-user-select: none;
+  position: fixed;
+  overflow: hidden;
 }

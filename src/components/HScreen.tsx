@@ -11,6 +11,7 @@ import { PlansModal } from './PlansModal';
 import { SetupProgressModal } from './SetupProgressModal';
 import { QuotaWarningModal } from './QuotaWarningModal';
 import { QuotaLimitModal } from './QuotaLimitModal';
+import { QwenDownloadModal } from './QwenDownloadModal';
 import { renderUserAvatar } from './UserAvatar';
 import { checkVoiceQuotaStatus, addVoiceUsage, loadVoiceQuotaState } from '../services/voiceQuota';
 
@@ -79,6 +80,24 @@ export const HScreen: React.FC<HScreenProps> = ({
   const [userPlan, setUserPlan] = useState<'Membro Alpha' | 'LYX Essencial' | 'LYX Plus'>(() => {
     return (localStorage.getItem('lyx_user_plan') as any) || 'Membro Alpha';
   });
+
+  // Modal 1: Download de Arquivos no início
+  useEffect(() => {
+    const hasSeenSetup = sessionStorage.getItem('lyx_setup_shown');
+    if (!hasSeenSetup && userPlan !== 'LYX Plus') {
+      const timer = setTimeout(() => {
+        // Dispara o download dos modelos ao abrir
+        window.dispatchEvent(new CustomEvent('open-qwen-download'));
+        sessionStorage.setItem('lyx_setup_shown', 'true');
+      }, 1000); 
+      return () => clearTimeout(timer);
+    }
+  }, [userPlan]);
+
+
+
+  
+
   const [userName, setUserName] = useState('Daniel');
   const [customAvatarUrl, setCustomAvatarUrl] = useState<string | null>(null);
 
@@ -326,11 +345,11 @@ export const HScreen: React.FC<HScreenProps> = ({
           --ink: #14245b;
           --muted: #7885a6;
 
-          position: relative;
+          position: fixed;
+          top: 0;
+          left: 0;
           width: 100%;
-          height: 100vh;
-          height: 100dvh;
-          max-height: 100dvh;
+          height: 100%;
           overflow: hidden;
 
           color: var(--ink);
@@ -411,7 +430,7 @@ export const HScreen: React.FC<HScreenProps> = ({
           z-index: 2;
           width: min(1080px, 94vw);
           height: 100%;
-          max-height: 100dvh;
+          max-height: 100%;
           margin: 0 auto;
           padding: 10px 0 8px;
           display: flex;
@@ -1122,7 +1141,7 @@ export const HScreen: React.FC<HScreenProps> = ({
           left: 0;
           top: 10%;
           width: 1px;
-          height: 80%;
+          height: 75%;
           background: linear-gradient(
             transparent,
             rgba(58,87,159,.22),
@@ -1626,12 +1645,10 @@ export const HScreen: React.FC<HScreenProps> = ({
         isOpen={isVoiceModalOpen}
         onClose={() => setIsVoiceModalOpen(false)}
         currentStyleId={currentStyleId}
-        onSelectStyle={onSelectStyle}
+        onChangeStyle={(id) => {
+          if (onSelectStyle) onSelectStyle(id);
+        }}
         onPreviewSpeech={onPreviewSpeech}
-        voices={voices}
-        currentVoiceId={currentVoiceId}
-        onSelectVoice={onSelectVoice}
-        onRefreshVoices={onRefreshVoices}
         userPlan={userPlan}
         onOpenPlans={() => {
           setIsVoiceModalOpen(false);
@@ -1689,16 +1706,7 @@ export const HScreen: React.FC<HScreenProps> = ({
       />
 
       {/* 1. MODAL: AJUSTES & ENGRENAGENS (SETUP PROGRESS) */}
-      <SetupProgressModal
-        isOpen={Boolean(activeSpecialModal === 'setup' || (modelDownload?.isDownloading && !modelDownload?.isDownloaded))}
-        progress={modelDownload ? modelDownload.progressPercent : 68}
-        statusText={
-          modelDownload
-            ? `Baixando os modelos de voz (${modelDownload.downloadedMB}/${modelDownload.totalMB} MB)...`
-            : 'Baixando os modelos de voz...'
-        }
-        onClose={() => setActiveSpecialModal(null)}
-      />
+      <QwenDownloadModal onModelStatusChange={() => {}} />
 
       {/* 2. MODAL: COTA 80% (QUOTA WARNING) */}
       <QuotaWarningModal
@@ -1706,7 +1714,7 @@ export const HScreen: React.FC<HScreenProps> = ({
         percentage={
           loadVoiceQuotaState().usedSeconds > 0
             ? Math.min(100, Math.round((loadVoiceQuotaState().usedSeconds / 7200) * 100))
-            : 80
+            : 75
         }
         onClose={() => setActiveSpecialModal(null)}
         onOpenPlans={() => {

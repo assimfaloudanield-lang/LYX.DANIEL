@@ -135,10 +135,11 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
           --lyx-dark: #13245d;
           --lyx-muted: #7c89aa;
 
-          position: relative;
+          position: fixed;
+          top: 0;
+          left: 0;
           width: 100%;
-          min-height: 100vh;
-          min-height: 100svh;
+          height: 100%;
           overflow-x: hidden;
           overflow-y: auto;
 

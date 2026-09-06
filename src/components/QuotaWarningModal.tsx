@@ -14,8 +14,8 @@ export const QuotaWarningModal: React.FC<QuotaWarningModalProps> = ({
   isOpen,
   onClose,
   onOpenPlans,
-  percentage = 80,
-  title = 'Você já utilizou 80% da sua cota',
+  percentage = 75,
+  title = 'Você atingiu 1h30m de conversa (75%)',
   subtitle = 'Ainda há interações disponíveis, sua cota será renovada todo dia às 5h',
 }) => {
   if (!isOpen) return null;
