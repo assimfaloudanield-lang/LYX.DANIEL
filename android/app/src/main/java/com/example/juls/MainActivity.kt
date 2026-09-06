@@ -132,7 +132,7 @@ class MainActivity : ComponentActivity() {
             val qwen = QwenEngine(this@MainActivity)
             CoroutineScope(Dispatchers.IO).launch {
                 qwen.responder(prompt, historyJson) { response ->
-                    withContext(Dispatchers.Main) {
+                    CoroutineScope(Dispatchers.Main).launch {
                         val safeRes = response.replace("'", "\\\\'")
                         evalJs("if(window.onQwenResponse) window.onQwenResponse('$safeRes');")
                     }
