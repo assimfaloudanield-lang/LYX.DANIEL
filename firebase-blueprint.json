@@ -1,0 +1,92 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Perfil de usuário da LYX com dados de assinatura e preferências",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "ID de autenticação do usuário no Firebase"
+        },
+        "email": {
+          "type": "string",
+          "description": "E-mail cadastrado"
+        },
+        "displayName": {
+          "type": "string",
+          "description": "Nome de exibição"
+        },
+        "photoURL": {
+          "type": "string",
+          "description": "URL da foto de perfil ou avatar customizado"
+        },
+        "plan": {
+          "type": "string",
+          "enum": ["Membro Alpha", "LYX Essencial", "LYX Plus"],
+          "description": "Plano atual do usuário"
+        },
+        "voiceStyle": {
+          "type": "string",
+          "description": "Estilo de voz padrão selecionado"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Data de criação"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Data da última atualização"
+        }
+      },
+      "required": ["uid", "email", "plan"]
+    },
+    "ConversationMessage": {
+      "title": "ConversationMessage",
+      "description": "Mensagem salva no histórico da conversa com a LYX",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "ID da mensagem"
+        },
+        "userId": {
+          "type": "string",
+          "description": "ID do usuário autor da sessão"
+        },
+        "sender": {
+          "type": "string",
+          "enum": ["user", "lyx"],
+          "description": "Emissor da mensagem"
+        },
+        "text": {
+          "type": "string",
+          "description": "Conteúdo textual da mensagem"
+        },
+        "isAudio": {
+          "type": "boolean",
+          "description": "Se a mensagem foi transmitida por voz"
+        },
+        "audioDuration": {
+          "type": "string",
+          "description": "Duração do áudio"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp de envio"
+        }
+      },
+      "required": ["id", "userId", "sender", "text", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Coleção com dados do perfil, plano e configurações do usuário"
+    },
+    "/users/{userId}/messages/{messageId}": {
+      "schema": "ConversationMessage",
+      "description": "Subcoleção contendo as mensagens da conversa sincronizadas na nuvem"
+    }
+  }
+}

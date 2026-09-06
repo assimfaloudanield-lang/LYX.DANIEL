@@ -1,0 +1,6 @@
+{
+  "name": "Galáxia Cósmica",
+  "description": "Interface galáctica cósmica com assistente de voz LYX, inteligência artificial e controle por voz.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

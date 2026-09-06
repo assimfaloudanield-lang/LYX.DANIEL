@@ -1,0 +1,13 @@
+# GitHub Linguist language detection overrides
+# Mark web/TypeScript files as non-detectable for language statistics so Kotlin is 100% primary
+*.ts linguist-detectable=false
+*.tsx linguist-detectable=false
+*.js linguist-detectable=false
+*.jsx linguist-detectable=false
+*.json linguist-detectable=false
+*.css linguist-detectable=false
+*.html linguist-detectable=false
+
+# Explicitly ensure Kotlin files are detected
+*.kt linguist-detectable=true
+*.kts linguist-detectable=true

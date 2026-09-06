@@ -1,0 +1,59 @@
+package com.example.juls.ui
+
+import androidx.compose.runtime.Composable
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import com.example.juls.ui.chat.ChatScreen
+import com.example.juls.ui.chat.ChatMessage
+import com.example.juls.ui.settings.SettingsScreen
+
+@Composable
+fun LyxApp(
+    isOn: Boolean,
+    isListening: Boolean,
+    voiceStatus: String?,
+    onTogglePower: () -> Unit,
+    messages: List<ChatMessage>,
+    onSendMessage: (String) -> Unit
+) {
+    val navController = rememberNavController()
+
+    NavHost(navController = navController, startDestination = "auth") {
+                composable("auth") {
+            AuthScreen(
+                onLoginSuccess = { 
+                    navController.navigate("home") {
+                        popUpTo("auth") { inclusive = true }
+                    }
+                }
+            )
+        }
+        
+        composable("home") {
+            HomeScreen(
+                isOn = isOn,
+                isListening = isListening,
+                voiceStatus = voiceStatus,
+                onTogglePower = onTogglePower,
+                onNavigateToChat = { navController.navigate("chat") },
+                onNavigateToProfile = { /* To be implemented */ },
+                onNavigateToSettings = { navController.navigate("settings") }
+            )
+        }
+        
+        composable("chat") {
+            ChatScreen(
+                messages = messages,
+                onSendMessage = onSendMessage,
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable("settings") {
+            SettingsScreen(
+                onBack = { navController.popBackStack() }
+            )
+        }
+    }
+}
