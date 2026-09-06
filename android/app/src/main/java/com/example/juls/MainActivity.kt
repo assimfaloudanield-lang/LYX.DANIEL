@@ -87,11 +87,11 @@ class MainActivity : ComponentActivity() {
                         evalJs("if(window.onUserInterrupted) window.onUserInterrupted();")
                     },
                     onPartialText = { partial ->
-                        val safeStr = partial.replace("'", "\\'")
+                        val safeStr = partial.replace("'", "\\\\'")
                         evalJs("if(window.onVoicePartialRecognized) window.onVoicePartialRecognized('$safeStr');")
                     },
                     onText = { final ->
-                        val safeStr = final.replace("'", "\\'")
+                        val safeStr = final.replace("'", "\\\\'")
                         evalJs("if(window.onVoiceRecognized) window.onVoiceRecognized('$safeStr');")
                     }
                 )
@@ -133,7 +133,7 @@ class MainActivity : ComponentActivity() {
             CoroutineScope(Dispatchers.IO).launch {
                 qwen.responder(prompt, historyJson) { response ->
                     withContext(Dispatchers.Main) {
-                        val safeRes = response.replace("'", "\\'")
+                        val safeRes = response.replace("'", "\\\\'")
                         evalJs("if(window.onQwenResponse) window.onQwenResponse('$safeRes');")
                     }
                 }
@@ -156,7 +156,7 @@ class MainActivity : ComponentActivity() {
                         evalJs("if(window.onModelDownloadComplete) window.onModelDownloadComplete();")
                     },
                     onError = { err -> 
-                        val safeErr = err.replace("'", "\\'")
+                        val safeErr = err.replace("'", "\\\\'")
                         evalJs("if(window.onModelDownloadError) window.onModelDownloadError('$safeErr');")
                     }
                 )
