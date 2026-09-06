@@ -7,7 +7,9 @@ interface QwenDownloadModalProps {
 }
 
 export const QwenDownloadModal: React.FC<QwenDownloadModalProps> = ({ onModelStatusChange }) => {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(() => {
+    return localStorage.getItem('lyx_models_ready') !== 'true';
+  });
   const [isDownloaded, setIsDownloaded] = useState<boolean>(() => {
     return localStorage.getItem('lyx_models_ready') === 'true';
   });
@@ -145,10 +147,19 @@ export const QwenDownloadModal: React.FC<QwenDownloadModalProps> = ({ onModelSta
 
       {/* Modal / Card Unificado de Preparação de Modelos */}
       {isOpen && (
-        <div
-          id="qwen-download-dropdown"
-          className="absolute top-full right-0 mt-2.5 w-80 sm:w-88 py-3.5 px-3.5 rounded-2xl bg-[#090814]/98 border border-white/15 backdrop-blur-2xl shadow-[0_16px_40px_rgba(0,0,0,0.9),0_0_24px_rgba(56,189,248,0.2)] animate-in fade-in zoom-in-95 duration-200"
-        >
+        <>
+          {/* Overlay obrigatório se não estiver baixado */}
+          {!isDownloaded && (
+            <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-md flex items-center justify-center animate-in fade-in" />
+          )}
+          
+          <div
+            id="qwen-download-dropdown"
+            className={`${!isDownloaded 
+              ? 'fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[101]' 
+              : 'absolute top-full right-0 mt-2.5'
+            } w-[90%] max-w-sm sm:w-88 py-4 px-4 rounded-3xl bg-[#090814]/98 border border-white/15 backdrop-blur-2xl shadow-[0_16px_40px_rgba(0,0,0,0.9),0_0_24px_rgba(56,189,248,0.2)] animate-in fade-in zoom-in-95 duration-200`}
+          >
           {/* Cabeçalho */}
           <div className="flex items-center justify-between pb-2.5 border-b border-white/10">
             <div className="flex items-center gap-2">
@@ -160,12 +171,14 @@ export const QwenDownloadModal: React.FC<QwenDownloadModalProps> = ({ onModelSta
                 <p className="text-[9px] text-white/50">CCP/Llama + Kokoro PT-BR (pf_dora)</p>
               </div>
             </div>
+            {isDownloaded && (
             <button
               onClick={() => setIsOpen(false)}
               className="text-white/40 hover:text-white p-1 transition-colors"
             >
               <X className="w-3.5 h-3.5" />
             </button>
+          )}
           </div>
 
           {/* Conteúdo do Card */}
@@ -266,8 +279,9 @@ export const QwenDownloadModal: React.FC<QwenDownloadModalProps> = ({ onModelSta
             ) : (
               <div className="flex flex-col gap-2.5">
                 <p className="text-[11px] text-white/70 leading-relaxed">
-                  Prepare os motores neurais <strong className="text-white">CCP/Llama</strong> e{' '}
-                  <strong className="text-purple-300">Kokoro PT-BR (pf_dora)</strong> para funcionamento 100% autônomo.
+                  A Inteligência Artificial LYX precisa baixar os motores neurais <strong className="text-white">CCP/Llama</strong> e <strong className="text-purple-300">Kokoro PT-BR</strong> para o seu celular.
+                  <br/><br/>
+                  <span className="text-amber-400">⚠️ Recomendamos o uso de conexão Wi-Fi. (Total: 1.5 GB)</span>
                 </p>
 
                 <div className="grid grid-cols-2 gap-2 text-[9px] text-white/60">
