@@ -148,7 +148,7 @@ class JulsVoiceService : Service() {
         isRunning = false
         voiceEngine.stop()
         voiceEngine.destroy()
-        kokoroVoiceService.release()
+        kokoroVoiceService.stop()
         serviceScope.cancel()
         instance = null
         super.onDestroy()

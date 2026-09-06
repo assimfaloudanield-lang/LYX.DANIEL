@@ -43,7 +43,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         checkPermissions()
         
-        qwenModelManager.initialize()
+        // qwenModelManager.initialize()
 
         setContent {
             AndroidView(
@@ -96,13 +96,13 @@ class MainActivity : ComponentActivity() {
                     }
                 )
             }
-            voiceEngine?.startListening()
+            // voiceEngine?.startListening()
             evalJs("if(window.onAndroidStateChanged) window.onAndroidStateChanged(true, true);")
         }
 
         @JavascriptInterface
         fun stopListening() {
-            voiceEngine?.stopListening()
+            // voiceEngine?.stopListening()
             evalJs("if(window.onAndroidStateChanged) window.onAndroidStateChanged(true, false);")
         }
 
@@ -148,7 +148,7 @@ class MainActivity : ComponentActivity() {
         @JavascriptInterface
         fun startModelDownload() {
             CoroutineScope(Dispatchers.IO).launch {
-                qwenModelManager.downloadModel(
+                qwenModelManager.downloadWithProgress(
                     onProgress = { file, progress, max -> 
                         evalJs("if(window.onModelDownloadProgress) window.onModelDownloadProgress('$file', $progress, $max);")
                     },
@@ -165,7 +165,7 @@ class MainActivity : ComponentActivity() {
 
         @JavascriptInterface
         fun isModelDownloaded(): Boolean {
-            return qwenModelManager.isModelReady()
+            return qwenModelManager.isModelDownloaded()
         }
 
         @JavascriptInterface
