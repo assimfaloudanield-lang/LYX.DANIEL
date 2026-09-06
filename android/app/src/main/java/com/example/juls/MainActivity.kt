@@ -63,7 +63,12 @@ class MainActivity : ComponentActivity() {
                         settings.allowUniversalAccessFromFileURLs = true
                         
                         webViewClient = WebViewClient()
-                        webChromeClient = WebChromeClient()
+                        webChromeClient = object : WebChromeClient() {
+                            override fun onConsoleMessage(consoleMessage: android.webkit.ConsoleMessage?): Boolean {
+                                android.util.Log.d("LYX_WEBVIEW", "${consoleMessage?.message()} -- From line ${consoleMessage?.lineNumber()} of ${consoleMessage?.sourceId()}")
+                                return true
+                            }
+                        }
                         
                         addJavascriptInterface(WebAppInterface(), "AndroidBridge")
                         
