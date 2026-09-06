@@ -1,4 +1,9 @@
-package com.example.juls
+const fs = require('fs');
+const path = require('path');
+
+const file = path.join(__dirname, 'android/app/src/main/java/com/example/juls/MainActivity.kt');
+
+const newCode = `package com.example.juls
 
 import android.Manifest
 import android.annotation.SuppressLint
@@ -87,12 +92,12 @@ class MainActivity : ComponentActivity() {
                         evalJs("if(window.onUserInterrupted) window.onUserInterrupted();")
                     },
                     onPartialText = { partial ->
-                        val safeStr = partial.replace("'", "\\'")
-                        evalJs("if(window.onVoicePartialRecognized) window.onVoicePartialRecognized('$safeStr');")
+                        val safeStr = partial.replace("'", "\\\\'")
+                        evalJs("if(window.onVoicePartialRecognized) window.onVoicePartialRecognized('\$safeStr');")
                     },
                     onText = { final ->
-                        val safeStr = final.replace("'", "\\'")
-                        evalJs("if(window.onVoiceRecognized) window.onVoiceRecognized('$safeStr');")
+                        val safeStr = final.replace("'", "\\\\'")
+                        evalJs("if(window.onVoiceRecognized) window.onVoiceRecognized('\$safeStr');")
                     }
                 )
             }
@@ -133,8 +138,8 @@ class MainActivity : ComponentActivity() {
             CoroutineScope(Dispatchers.IO).launch {
                 qwen.responder(prompt, historyJson) { response ->
                     withContext(Dispatchers.Main) {
-                        val safeRes = response.replace("'", "\\'")
-                        evalJs("if(window.onQwenResponse) window.onQwenResponse('$safeRes');")
+                        val safeRes = response.replace("'", "\\\\'")
+                        evalJs("if(window.onQwenResponse) window.onQwenResponse('\$safeRes');")
                     }
                 }
             }
@@ -142,7 +147,7 @@ class MainActivity : ComponentActivity() {
 
         @JavascriptInterface
         fun togglePower(state: Boolean) {
-            evalJs("if(window.onAndroidStateChanged) window.onAndroidStateChanged($state, false);")
+            evalJs("if(window.onAndroidStateChanged) window.onAndroidStateChanged(\$state, false);")
         }
         
         @JavascriptInterface
@@ -150,14 +155,14 @@ class MainActivity : ComponentActivity() {
             CoroutineScope(Dispatchers.IO).launch {
                 qwenModelManager.downloadModel(
                     onProgress = { file, progress, max -> 
-                        evalJs("if(window.onModelDownloadProgress) window.onModelDownloadProgress('$file', $progress, $max);")
+                        evalJs("if(window.onModelDownloadProgress) window.onModelDownloadProgress('\$file', \$progress, \$max);")
                     },
                     onComplete = {
                         evalJs("if(window.onModelDownloadComplete) window.onModelDownloadComplete();")
                     },
                     onError = { err -> 
-                        val safeErr = err.replace("'", "\\'")
-                        evalJs("if(window.onModelDownloadError) window.onModelDownloadError('$safeErr');")
+                        val safeErr = err.replace("'", "\\\\'")
+                        evalJs("if(window.onModelDownloadError) window.onModelDownloadError('\$safeErr');")
                     }
                 )
             }
@@ -170,7 +175,7 @@ class MainActivity : ComponentActivity() {
 
         @JavascriptInterface
         fun getNativeVoices(): String {
-            return "[{\"id\":\"pt-br-dora\",\"name\":\"Dora (PT-BR)\"}]"
+            return "[{\\"id\\":\\"pt-br-dora\\",\\"name\\":\\"Dora (PT-BR)\\"}]"
         }
         
         @JavascriptInterface
@@ -214,3 +219,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
+`;
+
+fs.writeFileSync(file, newCode, 'utf8');
+console.log("Updated MainActivity.kt successfully");
