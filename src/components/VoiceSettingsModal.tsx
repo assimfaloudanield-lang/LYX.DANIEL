@@ -226,7 +226,7 @@ export const VoiceSettingsModal: React.FC<VoiceSettingsModalProps> = ({
                     }}
                     className={`p-4 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
                       isLocked
-                        ? 'bg-slate-50/40 border-slate-100/50 opacity-60 grayscale-[0.3]'
+                        ? 'bg-slate-50/20 border-slate-100/30 blur-[2.5px] opacity-60 hover:blur-[1px] grayscale-[0.2]'
                         : isSelected
                           ? 'bg-blue-50/60 border-blue-200/80 shadow-sm'
                           : 'bg-white border-slate-100 hover:border-blue-200/60 hover:bg-slate-50 hover:shadow-xs'
