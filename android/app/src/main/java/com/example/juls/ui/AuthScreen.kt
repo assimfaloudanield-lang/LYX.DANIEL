@@ -102,7 +102,7 @@ fun AuthScreen(onLoginSuccess: () -> Unit) {
                         placeholder = { Text("Nome completo", color = Color.White.copy(alpha = 0.3f), fontSize = 12.sp) },
                         modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
                         colors = TextFieldDefaults.outlinedTextFieldColors(
-                            textColor = Color.White,
+                            focusedTextColor = Color.White, unfocusedTextColor = Color.White,
                             containerColor = Color.Black.copy(alpha = 0.4f),
                             unfocusedBorderColor = Color.White.copy(alpha = 0.1f),
                             focusedBorderColor = Color(0xFF5CE1FF).copy(alpha = 0.5f)
@@ -118,7 +118,7 @@ fun AuthScreen(onLoginSuccess: () -> Unit) {
                     placeholder = { Text("E-mail", color = Color.White.copy(alpha = 0.3f), fontSize = 12.sp) },
                     modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
                     colors = TextFieldDefaults.outlinedTextFieldColors(
-                        textColor = Color.White,
+                        focusedTextColor = Color.White, unfocusedTextColor = Color.White,
                         containerColor = Color.Black.copy(alpha = 0.4f),
                         unfocusedBorderColor = Color.White.copy(alpha = 0.1f),
                         focusedBorderColor = Color(0xFF5CE1FF).copy(alpha = 0.5f)
@@ -133,7 +133,7 @@ fun AuthScreen(onLoginSuccess: () -> Unit) {
                     placeholder = { Text("Senha", color = Color.White.copy(alpha = 0.3f), fontSize = 12.sp) },
                     modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
                     colors = TextFieldDefaults.outlinedTextFieldColors(
-                        textColor = Color.White,
+                        focusedTextColor = Color.White, unfocusedTextColor = Color.White,
                         containerColor = Color.Black.copy(alpha = 0.4f),
                         unfocusedBorderColor = Color.White.copy(alpha = 0.1f),
                         focusedBorderColor = Color(0xFF5CE1FF).copy(alpha = 0.5f)

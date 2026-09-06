@@ -1,4 +1,5 @@
 package com.example.juls
+import android.util.Log
 
 import android.content.Context
 import kotlinx.coroutines.CoroutineScope

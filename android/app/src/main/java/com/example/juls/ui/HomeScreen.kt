@@ -23,6 +23,8 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.juls.R
@@ -67,9 +69,6 @@ fun HomeScreen(
                 .background(Color(0xFF010006).copy(alpha = 0.6f))
         )
 
-            contentScale = ContentScale.Crop,
-            alpha = 0.85f
-        )
 
         Column(
             modifier = Modifier

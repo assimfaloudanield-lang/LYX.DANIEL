@@ -43,16 +43,16 @@ fun LyxApp(
         }
         
         composable("chat") {
-            ChatScreen(
+            ChatScreen(isListening = isListening, onToggleMic = onTogglePower, 
                 messages = messages,
                 onSendMessage = onSendMessage,
-                onBack = { navController.popBackStack() }
+                onNavigateBack = { navController.popBackStack() }
             )
         }
 
         composable("settings") {
-            SettingsScreen(
-                onBack = { navController.popBackStack() }
+            SettingsScreen(isListening = isListening, onToggleMic = onTogglePower, 
+                onNavigateBack = { navController.popBackStack() }
             )
         }
     }
