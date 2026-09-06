@@ -307,6 +307,7 @@ export const QwenDownloadModal: React.FC<QwenDownloadModalProps> = ({ onModelSta
             )}
           </div>
         </div>
+        </>
       )}
     </div>
   );
