@@ -307,7 +307,7 @@ class KokoroModelManager(private val context: Context) {
                             ((downloadedBytes * 100) / totalBytes).toInt().coerceIn(0, 100)
                         } else 0
 
-                        if (percent != lastReportedPercent) {
+                        if (percent != lastReportedPercent || downloadedBytes % (1024 * 1024) < 65536) {
                             lastReportedPercent = percent
                             onProgress(downloadedBytes, totalBytes, percent)
                         }

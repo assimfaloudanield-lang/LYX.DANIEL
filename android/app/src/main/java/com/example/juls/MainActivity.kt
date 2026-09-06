@@ -159,23 +159,75 @@ class MainActivity : ComponentActivity() {
         }
         
         @JavascriptInterface
-        fun startModelDownload() {
+                fun startModelDownload() {
             CoroutineScope(Dispatchers.IO).launch {
-                qwenModelManager.downloadWithProgress(
-                    onProgress = { downloadedBytes, totalBytes, percent -> 
-                        val dlMB = downloadedBytes / (1024 * 1024)
-                        val totMB = totalBytes / (1024 * 1024)
-                        evalJs("if(window.onModelDownloadProgress) window.onModelDownloadProgress($downloadedBytes, $totalBytes, $percent, $dlMB, $totMB);")
-                        evalJs("if(window.onUnifiedModelProgress) window.onUnifiedModelProgress($percent, $dlMB, $totMB, $percent, 100, 345, 'Baixando modelos neurais...');")
-                    },
-                    onComplete = {
-                        evalJs("if(window.onModelDownloadComplete) window.onModelDownloadComplete();")
-                    },
-                    onError = { err -> 
-                        val safeErr = err.replace("'", "\\\\'")
-                        evalJs("if(window.onModelDownloadError) window.onModelDownloadError('$safeErr');")
-                    }
-                )
+                var qwenPercent = 0
+                var qwenDlMB = 0L
+                var qwenTotMB = 1180L
+                var kokoroPercent = 0
+                var kokoroDlMB = 0L
+                var kokoroTotMB = 345L
+                var qwenDone = false
+                var kokoroDone = false
+                var errorReported = false
+
+                fun reportProgress() {
+                    if (errorReported) return
+                    evalJs("if(window.onUnifiedModelProgress) window.onUnifiedModelProgress($qwenPercent, $qwenDlMB, $qwenTotMB, $kokoroPercent, $kokoroDlMB, $kokoroTotMB, 'Baixando modelos neurais...');")
+                }
+
+                launch {
+                    qwenModelManager.downloadWithProgress(
+                        onProgress = { downloadedBytes, totalBytes, percent -> 
+                            qwenDlMB = downloadedBytes / (1024 * 1024)
+                            qwenTotMB = totalBytes / (1024 * 1024)
+                            qwenPercent = percent
+                            reportProgress()
+                        },
+                        onComplete = {
+                            qwenDone = true
+                            qwenPercent = 100
+                            reportProgress()
+                            if (qwenDone && kokoroDone) {
+                                evalJs("if(window.onModelDownloadComplete) window.onModelDownloadComplete();")
+                            }
+                        },
+                        onError = { err -> 
+                            if (!errorReported) {
+                                errorReported = true
+                                val safeErr = err.replace("'", "\'")
+                                evalJs("if(window.onModelDownloadError) window.onModelDownloadError('Qwen: $safeErr');")
+                            }
+                        }
+                    )
+                }
+
+                launch {
+                    kokoroModelManager.downloadAndInstall(
+                        onProgress = { downloadedBytes, totalBytes, percent -> 
+                            kokoroDlMB = downloadedBytes / (1024 * 1024)
+                            kokoroTotMB = totalBytes / (1024 * 1024)
+                            kokoroPercent = percent
+                            reportProgress()
+                        },
+                        onStatusChange = { },
+                        onComplete = {
+                            kokoroDone = true
+                            kokoroPercent = 100
+                            reportProgress()
+                            if (qwenDone && kokoroDone) {
+                                evalJs("if(window.onModelDownloadComplete) window.onModelDownloadComplete();")
+                            }
+                        },
+                        onError = { err -> 
+                            if (!errorReported) {
+                                errorReported = true
+                                val safeErr = err.replace("'", "\'")
+                                evalJs("if(window.onModelDownloadError) window.onModelDownloadError('Kokoro: $safeErr');")
+                            }
+                        }
+                    )
+                }
             }
         }
 

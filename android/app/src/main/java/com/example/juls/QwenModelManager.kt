@@ -141,7 +141,7 @@ class QwenModelManager(private val context: Context) {
                         downloadedBytes += bytes
 
                         val percent = ((downloadedBytes * 100) / totalBytes).toInt().coerceIn(0, 100)
-                        if (percent != lastReportedPercent) {
+                        if (percent != lastReportedPercent || downloadedBytes % (1024 * 1024) < 65536) {
                             lastReportedPercent = percent
                             progressCallback?.invoke(downloadedBytes, totalBytes, percent)
                         }
