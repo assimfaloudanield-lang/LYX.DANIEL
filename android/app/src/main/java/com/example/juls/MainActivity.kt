@@ -58,6 +58,10 @@ class MainActivity : ComponentActivity() {
                         settings.allowFileAccess = true
                         settings.allowContentAccess = true
                         
+                        // FIX TELA BRANCA: Permite carregamento de módulos ES (type="module") via file://
+                        settings.allowFileAccessFromFileURLs = true
+                        settings.allowUniversalAccessFromFileURLs = true
+                        
                         webViewClient = WebViewClient()
                         webChromeClient = WebChromeClient()
                         
