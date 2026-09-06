@@ -145,7 +145,7 @@ export const ChatWindowModal: React.FC<ChatWindowModalProps> = ({
       />
 
       {/* Janela de Chat Glassmorphism Clean Premium */}
-      <div className="relative w-full max-w-lg h-[86vh] max-h-[640px] rounded-[28px] bg-white/92 backdrop-blur-2xl border border-white/70 shadow-[0_25px_70px_rgba(20,36,93,0.18)] flex flex-col overflow-hidden text-slate-800 animate-in zoom-in-95 duration-200">
+      <div className="relative w-full max-w-lg h-[88%] min-h-[400px] max-h-[640px] rounded-[28px] bg-white/92 backdrop-blur-2xl border border-white/70 shadow-[0_25px_70px_rgba(20,36,93,0.18)] flex flex-col overflow-hidden text-slate-800 animate-in zoom-in-95 duration-200">
         
         {/* CABEÇALHO DO CHAT */}
         <header className="px-5 py-3.5 border-b border-slate-100/90 flex items-center justify-between bg-white/70 backdrop-blur-xl shrink-0">

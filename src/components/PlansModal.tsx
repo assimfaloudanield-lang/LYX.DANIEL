@@ -90,10 +90,12 @@ export const PlansModal: React.FC<PlansModalProps> = ({
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-4xl max-h-[92vh] overflow-y-auto rounded-[32px] bg-gradient-to-b from-white via-white/95 to-slate-50 border border-white/80 p-5 sm:p-8 text-slate-800 transition-all"
+        className="relative w-full max-w-4xl max-h-[88%] min-h-[420px] overflow-y-auto rounded-[32px] bg-gradient-to-b from-white via-white/95 to-slate-50 border border-white/80 p-5 sm:p-8 text-slate-800 transition-all flex flex-col"
         onClick={(e) => e.stopPropagation()}
         style={{
           boxShadow: '0 25px 70px -15px rgba(30, 58, 138, 0.16), 0 0 0 1px rgba(255, 255, 255, 0.8) inset',
+          maxHeight: '88%',
+          minHeight: '400px',
         }}
       >
         {/* Glows Decorativos de Fundo */}

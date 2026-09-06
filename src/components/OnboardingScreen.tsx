@@ -6,7 +6,7 @@ interface OnboardingScreenProps {
 
 export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onStart }) => {
   return (
-    <div className="fixed inset-0 w-full h-full overflow-y-auto overflow-x-hidden flex justify-center items-center py-4 px-3 bg-[#eef3ff] text-[#2b3a58] font-sans pointer-events-auto" style={{ WebkitOverflowScrolling: "touch" }}>
+    <div className="fixed inset-0 w-full h-full overflow-y-auto overflow-x-hidden bg-[#eef3ff] text-[#2b3a58] font-sans pointer-events-auto flex flex-col" style={{ WebkitOverflowScrolling: "touch" }}>
       <style>{`
         @keyframes float-orb {
           0%, 100% { transform: translate(-50%, -50%) translateY(0); }
@@ -24,8 +24,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onStart }) =
         }
       `}</style>
 
-      <main 
-        className="w-full max-w-[420px] relative overflow-hidden rounded-[32px] px-6 py-6 flex flex-col justify-between"
+      <main className="w-full min-h-full flex-1 relative overflow-hidden rounded-none px-6 py-8 flex flex-col justify-between"
         style={{
           background: `
             radial-gradient(120% 80% at 10% 0%, rgba(186, 214, 255, 0.85), transparent 55%),

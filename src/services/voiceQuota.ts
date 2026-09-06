@@ -60,7 +60,7 @@ export function addVoiceUsage(seconds: number): {
   const percentage = Math.min(100, Math.round((state.usedSeconds / FREE_DAILY_LIMIT_SECONDS) * 100));
   let shouldWarn80 = false;
 
-  if (percentage >= 80 && percentage < 100 && !state.hasWarned80) {
+  if (percentage >= 75 && percentage < 100 && !state.hasWarned80) {
     state.hasWarned80 = true;
     shouldWarn80 = true;
   }

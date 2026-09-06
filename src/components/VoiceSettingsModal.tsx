@@ -157,7 +157,7 @@ export const VoiceSettingsModal: React.FC<VoiceSettingsModalProps> = ({
       />
 
       {/* Modal Container */}
-      <div className="relative w-full max-w-[440px] bg-white/95 backdrop-blur-2xl rounded-[32px] shadow-[0_20px_60px_rgba(20,36,93,0.15)] border border-white/80 overflow-hidden flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-200">
+      <div className="relative w-full max-w-[440px] bg-white/95 backdrop-blur-2xl rounded-[32px] shadow-[0_20px_60px_rgba(20,36,93,0.15)] border border-white/80 overflow-hidden flex flex-col max-h-[88%] min-h-[380px] animate-in zoom-in-95 duration-200">
         
         {/* HEADER */}
         <div className="px-6 py-5 flex items-center justify-between border-b border-slate-100 bg-white/50 shrink-0">

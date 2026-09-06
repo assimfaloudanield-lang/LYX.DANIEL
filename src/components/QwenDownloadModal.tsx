@@ -24,6 +24,8 @@ export const QwenDownloadModal: React.FC<QwenDownloadModalProps> = ({ onModelSta
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    const handleOpen = () => setIsOpen(true);
+    window.addEventListener('open-qwen-download', handleOpen);
     // Registra listeners globais para a bridge nativa do Android
     (window as any).onUnifiedModelProgress = (
       ccpPct: number,
@@ -64,6 +66,9 @@ export const QwenDownloadModal: React.FC<QwenDownloadModalProps> = ({ onModelSta
     (window as any).onModelDownloadError = (err: string) => {
       setIsDownloading(false);
       setStatusMessage(`Erro: ${err}`);
+    };
+    return () => {
+      window.removeEventListener('open-qwen-download', handleOpen);
     };
   }, [onModelStatusChange]);
 
@@ -171,14 +176,11 @@ export const QwenDownloadModal: React.FC<QwenDownloadModalProps> = ({ onModelSta
                 <p className="text-[9px] text-white/50">CCP/Llama + Kokoro PT-BR (pf_dora)</p>
               </div>
             </div>
-            {isDownloaded && (
-            <button
-              onClick={() => setIsOpen(false)}
+            <button onClick={() => setIsOpen(false)}
               className="text-white/40 hover:text-white p-1 transition-colors"
             >
               <X className="w-3.5 h-3.5" />
             </button>
-          )}
           </div>
 
           {/* Conteúdo do Card */}

@@ -88,31 +88,35 @@ class MainActivity : ComponentActivity() {
     inner class WebAppInterface {
         @JavascriptInterface
         fun startListening() {
-            if (voiceEngine == null) {
-                voiceEngine = VoiceEngine(
-                    context = this@MainActivity,
-                    onInterruption = {
-                        kokoroVoiceService.stop()
-                        evalJs("if(window.onUserInterrupted) window.onUserInterrupted();")
-                    },
-                    onPartialText = { partial ->
-                        val safeStr = partial.replace("'", "\\\\'")
-                        evalJs("if(window.onVoicePartialRecognized) window.onVoicePartialRecognized('$safeStr');")
-                    },
-                    onText = { final ->
-                        val safeStr = final.replace("'", "\\\\'")
-                        evalJs("if(window.onVoiceRecognized) window.onVoiceRecognized('$safeStr');")
-                    }
-                )
+            runOnUiThread {
+                if (voiceEngine == null) {
+                    voiceEngine = VoiceEngine(
+                        context = this@MainActivity,
+                        onInterruption = {
+                            kokoroVoiceService.stop()
+                            evalJs("if(window.onUserInterrupted) window.onUserInterrupted();")
+                        },
+                        onPartialText = { partial ->
+                            val safeStr = partial.replace("'", "\'")
+                            evalJs("if(window.onVoicePartialRecognized) window.onVoicePartialRecognized('$safeStr');")
+                        },
+                        onText = { final ->
+                            val safeStr = final.replace("'", "\'")
+                            evalJs("if(window.onVoiceRecognized) window.onVoiceRecognized('$safeStr');")
+                        }
+                    )
+                }
+                voiceEngine?.start()
+                evalJs("if(window.onAndroidStateChanged) window.onAndroidStateChanged(true, true);")
             }
-            // voiceEngine?.startListening()
-            evalJs("if(window.onAndroidStateChanged) window.onAndroidStateChanged(true, true);")
         }
 
         @JavascriptInterface
         fun stopListening() {
-            // voiceEngine?.stopListening()
-            evalJs("if(window.onAndroidStateChanged) window.onAndroidStateChanged(true, false);")
+            runOnUiThread {
+                voiceEngine?.stop()
+                evalJs("if(window.onAndroidStateChanged) window.onAndroidStateChanged(true, false);")
+            }
         }
 
         @JavascriptInterface
@@ -158,8 +162,11 @@ class MainActivity : ComponentActivity() {
         fun startModelDownload() {
             CoroutineScope(Dispatchers.IO).launch {
                 qwenModelManager.downloadWithProgress(
-                    onProgress = { file, progress, max -> 
-                        evalJs("if(window.onModelDownloadProgress) window.onModelDownloadProgress('$file', $progress, $max);")
+                    onProgress = { downloadedBytes, totalBytes, percent -> 
+                        val dlMB = downloadedBytes / (1024 * 1024)
+                        val totMB = totalBytes / (1024 * 1024)
+                        evalJs("if(window.onModelDownloadProgress) window.onModelDownloadProgress($downloadedBytes, $totalBytes, $percent, $dlMB, $totMB);")
+                        evalJs("if(window.onUnifiedModelProgress) window.onUnifiedModelProgress($percent, $dlMB, $totMB, $percent, 100, 345, 'Baixando modelos neurais...');")
                     },
                     onComplete = {
                         evalJs("if(window.onModelDownloadComplete) window.onModelDownloadComplete();")

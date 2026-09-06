@@ -529,7 +529,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
 
         {/* TÓPICO 1: CONTA */}
         {currentSection === 'conta' && (
-          <div className="mt-3.5 space-y-3 max-h-[68vh] overflow-y-auto pr-1">
+          <div className="mt-3.5 space-y-3 max-h-[75%] min-h-[260px] overflow-y-auto pr-1">
             <div className="text-[11px] text-slate-500 pb-1 border-b border-slate-100">
               É a identidade do usuário no ecossistema da LYX.
             </div>
@@ -823,7 +823,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
 
         {/* TÓPICO 2: PREFERÊNCIAS */}
         {currentSection === 'preferencias' && (
-          <div className="mt-3.5 space-y-3 max-h-[68vh] overflow-y-auto pr-1">
+          <div className="mt-3.5 space-y-3 max-h-[75%] min-h-[260px] overflow-y-auto pr-1">
             <div className="text-[11px] text-slate-500 pb-1 border-b border-slate-100">
               Defina como a inteligência da LYX interage e se adapta a você.
             </div>
@@ -1054,7 +1054,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
 
         {/* TÓPICO 3: DADOS E PRIVACIDADE */}
         {currentSection === 'dados' && (
-          <div className="mt-3.5 space-y-3 max-h-[68vh] overflow-y-auto pr-1">
+          <div className="mt-3.5 space-y-3 max-h-[75%] min-h-[260px] overflow-y-auto pr-1">
             <div className="text-[11px] text-slate-500 pb-1 border-b border-slate-100">
               Controle absoluto e transparente sobre os seus dados e privacidade.
             </div>
@@ -1261,7 +1261,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
 
         {/* TÓPICO 4: GESTÃO DA SESSÃO COM TODAS AS COPIES E FUNCIONALIDADES */}
         {currentSection === 'sessao' && (
-          <div className="mt-3.5 space-y-3 max-h-[68vh] overflow-y-auto pr-1">
+          <div className="mt-3.5 space-y-3 max-h-[75%] min-h-[260px] overflow-y-auto pr-1">
             <div className="text-[11px] text-slate-500 pb-1 border-b border-slate-100">
               Controle de acessos, dispositivos e segurança ativa da conta.
             </div>
