@@ -11,6 +11,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
+import androidx.compose.runtime.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -169,7 +170,7 @@ fun HomeScreen(
 
             // CHAT PANEL - Slim, horizontal, refined glass, animated stroke
             val infiniteTransitionCta = rememberInfiniteTransition(label = "ctaStroke")
-            val angle by infiniteTransitionCta.animateFloat(
+            val angle: Float by infiniteTransitionCta.animateFloat(
                 initialValue = 0f,
                 targetValue = 360f,
                 animationSpec = infiniteRepeatable(

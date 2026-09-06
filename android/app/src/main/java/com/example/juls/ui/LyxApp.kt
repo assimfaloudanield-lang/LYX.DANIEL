@@ -51,7 +51,7 @@ fun LyxApp(
         }
 
         composable("settings") {
-            SettingsScreen(isListening = isListening, onToggleMic = onTogglePower, 
+            SettingsScreen(
                 onNavigateBack = { navController.popBackStack() }
             )
         }
