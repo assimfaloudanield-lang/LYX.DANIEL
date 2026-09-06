@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Settings, Check, Sparkles, Volume2, X, Sliders, ChevronRight, Lock } from 'lucide-react';
+import { Settings, Check, Sparkles, Volume2, X, Sliders, ChevronRight, Lock, Crown, ArrowRight } from 'lucide-react';
 
 export interface NativeVoiceOption {
   id: string;
@@ -219,60 +219,77 @@ export const VoiceSettingsModal: React.FC<VoiceSettingsModalProps> = ({
             {VOICE_STYLES.map((style) => {
               const isSelected = style.id === currentStyleId;
               const isLocked = style.isPlusOnly && !isUserPlus;
+              
               return (
                 <div
                   key={style.id}
                   onClick={() => handleStyleClick(style)}
-                  className={`p-3 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
-                    isSelected
-                      ? 'bg-blue-50/80 border-blue-200/80 shadow-sm'
-                      : isLocked
-                      ? 'bg-slate-50/60 border-slate-200/50 hover:bg-white hover:border-amber-200 opacity-90'
-                      : 'bg-white/60 border-slate-200/60 hover:bg-white hover:border-blue-100'
+                  className={`p-3 rounded-2xl border transition-all cursor-pointer flex flex-col gap-2 ${
+                    isLocked
+                      ? 'bg-slate-50/50 border-slate-100 opacity-60 grayscale-[0.2]'
+                      : isSelected
+                        ? 'bg-gradient-to-r from-blue-50/80 to-indigo-50/80 border-blue-200 shadow-sm'
+                        : 'bg-white border-slate-100 hover:border-blue-200/60 hover:bg-slate-50 hover:shadow-xs'
                   }`}
                 >
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-1.5">
-                      <span className={`text-[12px] font-medium ${isSelected ? 'text-blue-700 font-semibold' : 'text-slate-800'}`}>
-                        {style.name}
-                      </span>
-                      <span className={`text-[8px] font-semibold px-1.5 py-0.5 rounded-full border ${
-                        isSelected 
-                          ? 'bg-blue-100/60 border-blue-200 text-blue-700' 
-                          : style.isPlusOnly
-                          ? 'bg-amber-50 border-amber-200 text-amber-700'
-                          : 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                        isLocked 
+                          ? 'bg-slate-100 text-slate-400' 
+                          : isSelected ? 'bg-blue-100 text-blue-600' : 'bg-slate-50 text-slate-500'
                       }`}>
-                        {style.badge}
-                      </span>
+                        {isLocked ? <Lock size={14} /> : <span className="text-sm font-semibold">{style.icon}</span>}
+                      </div>
+                      
+                      <div className="flex flex-col">
+                        <div className="flex items-center gap-2">
+                          <span className={`font-bold text-sm ${isSelected && !isLocked ? 'text-blue-950' : 'text-slate-800'}`}>
+                            {style.name}
+                          </span>
+                          {!style.isPlusOnly && (
+                            <span className="px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700 text-[9px] font-bold tracking-wide uppercase border border-blue-200/50">
+                              Padrão
+                            </span>
+                          )}
+                          {style.isPlusOnly && (
+                            <span className="px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 text-[9px] font-bold tracking-wide uppercase border border-amber-200/50">
+                              Plus
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-[11px] text-slate-500">{style.description}</span>
+                      </div>
                     </div>
-                    <p className="text-[10px] text-slate-500 mt-0.5 leading-snug truncate">
-                      {style.description}
-                    </p>
-                  </div>
 
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (onPreviewSpeech) {
-                          onPreviewSpeech(style.previewTtsSample, style.pitch, style.rate);
-                        }
-                      }}
-                      className="p-1.5 rounded-full text-slate-400 hover:text-blue-600 hover:bg-white transition-colors"
-                      title="Ouvir prévia"
-                    >
-                      <Volume2 size={14} />
-                    </button>
-                    {isLocked ? (
-                      <div className="w-5 h-5 rounded-full bg-amber-100 border border-amber-200 flex items-center justify-center text-amber-700" title="Exclusivo LYX Plus">
-                        <Lock size={11} strokeWidth={2.2} />
-                      </div>
-                    ) : isSelected ? (
-                      <div className="w-5 h-5 rounded-full bg-blue-600 flex items-center justify-center text-white">
-                        <Check size={12} strokeWidth={2.5} />
-                      </div>
-                    ) : null}
+                    <div className="flex items-center gap-2">
+                      {!isLocked && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (onPreviewSpeech) onPreviewSpeech(style.previewTtsSample, style.pitch, style.rate);
+                          }}
+                          className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 hover:bg-slate-200 hover:text-slate-600 transition-colors"
+                        >
+                          <Volume2 size={14} />
+                        </button>
+                      )}
+                      
+                      {isLocked ? (
+                        <div className="w-6 h-6 rounded-full bg-slate-200/50 flex items-center justify-center text-slate-400">
+                          <Lock size={12} />
+                        </div>
+                      ) : (
+                        <div className={`w-6 h-6 rounded-full flex items-center justify-center transition-all ${
+                          isSelected
+                            ? 'bg-blue-600 text-white shadow-md scale-100'
+                            : 'bg-transparent border-2 border-slate-200 scale-90 opacity-60'
+                        }`}>
+                          {isSelected && <Check size={12} strokeWidth={3} />}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               );
