@@ -215,7 +215,7 @@ class MainActivity : ComponentActivity() {
                         onError = { err -> 
                             if (!errorReported) {
                                 errorReported = true
-                                val safeErr = err.replace("'", "\'")
+                                val safeErr = err.replace("\\", "\\\\").replace("'", "\\'").replace("\n", " ").replace("\r", "")
                                 evalJs("if(window.onModelDownloadError) window.onModelDownloadError('Qwen: $safeErr');")
                             }
                         }
@@ -230,7 +230,10 @@ class MainActivity : ComponentActivity() {
                             kokoroPercent = percent
                             reportProgress()
                         },
-                        onStatusChange = { },
+                        onStatusChange = { status ->
+                            val safeStatus = status.replace("'", "\\'").replace("\n", " ")
+                            evalJs("if(window.onModelDownloadStatus) window.onModelDownloadStatus('$safeStatus');")
+                        },
                         onComplete = {
                             kokoroDone = true
                             kokoroPercent = 100
@@ -242,7 +245,7 @@ class MainActivity : ComponentActivity() {
                         onError = { err -> 
                             if (!errorReported) {
                                 errorReported = true
-                                val safeErr = err.replace("'", "\'")
+                                val safeErr = err.replace("\\", "\\\\").replace("'", "\\'").replace("\n", " ").replace("\r", "")
                                 evalJs("if(window.onModelDownloadError) window.onModelDownloadError('Kokoro: $safeErr');")
                             }
                         }
@@ -253,7 +256,31 @@ class MainActivity : ComponentActivity() {
 
         @JavascriptInterface
         fun isModelDownloaded(): Boolean {
-            return qwenModelManager.isModelDownloaded()
+            return qwenModelManager.isModelDownloaded() && kokoroModelManager.isKokoroInstalled()
+        }
+
+        @JavascriptInterface
+        fun checkModelStatus() {
+            val qwenOk = qwenModelManager.isModelDownloaded()
+            val kokoroOk = kokoroModelManager.isKokoroInstalled()
+            val allOk = qwenOk && kokoroOk
+            evalJs("if(window.onUnifiedStatusChecked) window.onUnifiedStatusChecked($qwenOk, $kokoroOk, $allOk);")
+        }
+
+        @JavascriptInterface
+        fun deleteModels() {
+            try {
+                val qwenFolder = File(filesDir, "models")
+                if (qwenFolder.exists()) qwenFolder.deleteRecursively()
+                val kokoroDir = File(filesDir, "kokoro")
+                if (kokoroDir.exists()) kokoroDir.deleteRecursively()
+                val zipPart = File(filesDir, "kokoro.zip.part")
+                if (zipPart.exists()) zipPart.delete()
+                val zipTarget = File(filesDir, "kokoro.zip")
+                if (zipTarget.exists()) zipTarget.delete()
+            } catch (e: Exception) {
+                Log.e("MainActivity", "Erro ao deletar modelos: " + e.message)
+            }
         }
 
         @JavascriptInterface

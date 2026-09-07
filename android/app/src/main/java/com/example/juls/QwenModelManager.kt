@@ -2,6 +2,7 @@ package com.example.juls
 
 import android.content.Context
 import java.io.File
+import java.io.FileOutputStream
 import java.net.HttpURLConnection
 import java.net.URL
 
@@ -38,7 +39,7 @@ class QwenModelManager(private val context: Context) {
         }
 
         val tempFile = File(folder, "$modelName.tmp")
-        if (tempFile.exists()) {
+        if (tempFile.exists() && tempFile.length() < 1000L) {
             tempFile.delete()
         }
 
@@ -71,7 +72,7 @@ class QwenModelManager(private val context: Context) {
         }
 
         val tempFile = File(folder, "$modelName.tmp")
-        if (tempFile.exists()) {
+        if (tempFile.exists() && tempFile.length() < 1000L) {
             tempFile.delete()
         }
 
@@ -96,6 +97,10 @@ class QwenModelManager(private val context: Context) {
         var currentUrl = modelUrl
         var redirects = 0
         val maxRedirects = 10
+        var existingBytes = if (file.exists() && file.length() > 1000L) file.length() else 0L
+        if (existingBytes == 0L && file.exists()) {
+            file.delete()
+        }
 
         while (redirects < maxRedirects) {
             val url = URL(currentUrl)
@@ -103,9 +108,13 @@ class QwenModelManager(private val context: Context) {
             connection.instanceFollowRedirects = true
             connection.connectTimeout = 30000
             connection.readTimeout = 60000
-            connection.setRequestProperty("User-Agent", "Mozilla/5.0 LYX-Android-App")
-            connection.connect()
+            connection.setRequestProperty("User-Agent", "Mozilla/5.0 (Android; LYX-Model-Downloader)")
 
+            if (existingBytes > 0) {
+                connection.setRequestProperty("Range", "bytes=$existingBytes-")
+            }
+
+            connection.connect()
             val responseCode = connection.responseCode
             if (responseCode in 300..399) {
                 val location = connection.getHeaderField("Location")
@@ -122,24 +131,36 @@ class QwenModelManager(private val context: Context) {
                 continue
             }
 
-            if (responseCode != HttpURLConnection.HTTP_OK) {
+            val isPartial = (responseCode == HttpURLConnection.HTTP_PARTIAL)
+            val isOk = (responseCode == HttpURLConnection.HTTP_OK)
+            if (!isPartial && !isOk) {
                 connection.disconnect()
                 throw Exception("Falha HTTP $responseCode ao baixar o modelo Qwen3")
             }
 
-            val totalBytes = connection.contentLengthLong.let { if (it > 0) it else 1_180_000_000L }
-            var downloadedBytes = 0L
-            var lastReportedPercent = -1
+            val append = isPartial && existingBytes > 0
+            if (!append && existingBytes > 0) {
+                existingBytes = 0L
+                file.delete()
+            }
 
+            val remoteLength = connection.contentLengthLong
+            val totalBytes = if (append) {
+                existingBytes + if (remoteLength > 0) remoteLength else (1_282_439_264L - existingBytes)
+            } else {
+                if (remoteLength > 0) remoteLength else 1_282_439_264L
+            }
+
+            var downloadedBytes = existingBytes
+            var lastReportedPercent = -1
             connection.inputStream.use { input ->
-                file.outputStream().use { output ->
+                FileOutputStream(file, append).use { output ->
                     val buffer = ByteArray(65536)
                     while (true) {
                         val bytes = input.read(buffer)
                         if (bytes == -1) break
                         output.write(buffer, 0, bytes)
                         downloadedBytes += bytes
-
                         val percent = ((downloadedBytes * 100) / totalBytes).toInt().coerceIn(0, 100)
                         if (percent != lastReportedPercent || downloadedBytes % (1024 * 1024) < 65536) {
                             lastReportedPercent = percent
@@ -149,13 +170,10 @@ class QwenModelManager(private val context: Context) {
                     output.flush()
                 }
             }
-
             connection.disconnect()
             progressCallback?.invoke(downloadedBytes, totalBytes, 100)
-            return
+            break
         }
-
-        throw Exception("Limite de redirecionamentos excedido ao baixar o Qwen3")
     }
 }
 

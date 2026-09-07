@@ -14,7 +14,7 @@ class KokoroModelManager(private val context: Context) {
     companion object {
         private const val TAG = "KOKORO_TTS"
         const val KOKORO_PACKAGE_URL =
-            "https://huggingface.co/cristianoaredes/kokoro-pt-br/resolve/main/letrinhas-kokoro-pt-br.zip"
+            "https://huggingface.co/cristianoaredes/kokoro-pt-br/resolve/main/letrinhas-kokoro-pt.zip"
         const val KOKORO_PACKAGE_FALLBACK_URL =
             "https://huggingface.co/cristianoaredes/kokoro-pt-br/resolve/main/letrinhas-kokoro-pt.zip"
         const val EXPECTED_PACKAGE_SIZE = 344_615_823L
@@ -129,16 +129,30 @@ class KokoroModelManager(private val context: Context) {
 
         val zipPartFile = File(context.filesDir, "kokoro.zip.part")
         val zipTargetFile = File(context.filesDir, "kokoro.zip")
+        if (zipPartFile.exists() && zipPartFile.length() < 1000L) zipPartFile.delete()
+        if (zipTargetFile.exists() && zipTargetFile.length() < 1000L) zipTargetFile.delete()
 
         try {
-            downloadFileWithResume(
-                KOKORO_PACKAGE_URL,
-                zipPartFile,
-                EXPECTED_PACKAGE_SIZE,
-                onProgress = { dl, total, pct ->
-                    onProgress(dl, total, pct)
-                }
-            )
+            var downloadSuccess = false
+            try {
+                downloadFileWithResume(
+                    KOKORO_PACKAGE_URL,
+                    zipPartFile,
+                    EXPECTED_PACKAGE_SIZE,
+                    onProgress = { dl, total, pct -> onProgress(dl, total, pct) }
+                )
+                downloadSuccess = true
+            } catch (ePrimary: Exception) {
+                Log.w(TAG, "Falha na URL primaria: " + ePrimary.message)
+                if (zipPartFile.exists() && zipPartFile.length() < 1000L) zipPartFile.delete()
+                downloadFileWithResume(
+                    KOKORO_PACKAGE_FALLBACK_URL,
+                    zipPartFile,
+                    EXPECTED_PACKAGE_SIZE,
+                    onProgress = { dl, total, pct -> onProgress(dl, total, pct) }
+                )
+                downloadSuccess = true
+            }
 
             Log.d(TAG, "KOKORO_DOWNLOAD_COMPLETED: Download finalizado. Validando arquivo ZIP...")
             currentState = KokoroState.DOWNLOADED
