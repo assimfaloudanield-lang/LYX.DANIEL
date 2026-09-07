@@ -11,6 +11,10 @@ import android.webkit.WebChromeClient
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import androidx.webkit.WebViewAssetLoader
+import android.webkit.WebResourceRequest
+import android.webkit.WebResourceResponse
+import androidx.webkit.WebViewClientCompat
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
@@ -62,7 +66,21 @@ class MainActivity : ComponentActivity() {
                         settings.allowFileAccessFromFileURLs = true
                         settings.allowUniversalAccessFromFileURLs = true
                         
-                        webViewClient = WebViewClient()
+
+                        val assetLoader = WebViewAssetLoader.Builder()
+                            .addPathHandler("/assets/", WebViewAssetLoader.AssetsPathHandler(context))
+                            .setDomain("app.lyx.local")
+                            .build()
+
+                        webViewClient = object : WebViewClientCompat() {
+                            override fun shouldInterceptRequest(
+                                view: WebView,
+                                request: WebResourceRequest
+                            ): WebResourceResponse? {
+                                return assetLoader.shouldInterceptRequest(request.url)
+                            }
+                        }
+                        
                         webChromeClient = object : WebChromeClient() {
                             override fun onConsoleMessage(consoleMessage: android.webkit.ConsoleMessage?): Boolean {
                                 android.util.Log.d("LYX_WEBVIEW", "${consoleMessage?.message()} -- From line ${consoleMessage?.lineNumber()} of ${consoleMessage?.sourceId()}")
@@ -72,7 +90,7 @@ class MainActivity : ComponentActivity() {
                         
                         addJavascriptInterface(WebAppInterface(), "AndroidBridge")
                         
-                        loadUrl("file:///android_asset/public/index.html")
+                        loadUrl("https://app.lyx.local/assets/public/index.html")
                     }
                 }
             )

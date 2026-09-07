@@ -644,6 +644,8 @@ export default function App() {
         } else {
           voiceEngineRef.current?.start();
         }
+      } else {
+        lyxStateMachine.transition('IDLE');
       }
     };
 
@@ -655,6 +657,8 @@ export default function App() {
       }
       if (isOnRef.current) {
         lyxStateMachine.transition('LISTENING');
+      } else {
+        lyxStateMachine.transition('IDLE');
       }
     };
 
