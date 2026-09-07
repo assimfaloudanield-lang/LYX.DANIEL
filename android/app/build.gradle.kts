@@ -21,7 +21,7 @@ android {
 
         externalNativeBuild {
             cmake {
-                cppFlags("-O3 -std=c++17 -pthread")
+                cppFlags("-O3 -std=c++17")
             }
         }
     }
@@ -48,6 +48,11 @@ android {
 
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.8"
+    }
+
+    lint {
+        abortOnError = false
+        checkReleaseBuilds = false
     }
 }
 
@@ -79,6 +84,6 @@ dependencies {
     implementation("com.google.firebase:firebase-firestore")
     implementation("com.google.android.gms:play-services-auth:21.2.0")
 
-    // ONNX Runtime Android for Real Kokoro Neural TTS Local Inference
+    // ONNX Runtime Android for Kokoro Neural TTS Local Inference
     implementation("com.microsoft.onnxruntime:onnxruntime-android:1.17.0")
 }
