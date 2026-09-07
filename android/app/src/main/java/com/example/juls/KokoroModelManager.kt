@@ -213,22 +213,12 @@ class KokoroModelManager(private val context: Context) {
 
         onStatusChange("Baixando modelo ONNX do Kokoro...")
         if (!modelFile.exists() || modelFile.length() < 10_000_000L) {
-            val modelUrl = "https://huggingface.co/hexgrad/Kokoro-82M/resolve/main/kokoro-v0_19.onnx"
+            val modelUrl = "https://huggingface.co/onnx-community/Kokoro-82M-ONNX/resolve/main/onnx/model_quantized.onnx"
             val tmp = File(dir, "model.onnx.tmp")
-            downloadFileWithResume(modelUrl, tmp, 320_000_000L) { dl, tot, pct ->
-                onProgress(dl, tot, (pct * 0.85).toInt())
+            downloadFileWithResume(modelUrl, tmp, 92_000_000L) { dl, tot, pct ->
+                onProgress(dl, tot, pct)
             }
             tmp.renameTo(modelFile)
-        }
-
-        onStatusChange("Baixando vozes do Kokoro...")
-        if (!voicesFile.exists() || voicesFile.length() < 100_000L) {
-            val voicesUrl = "https://huggingface.co/hexgrad/Kokoro-82M/resolve/main/voices.bin"
-            val tmp = File(dir, "voices.bin.tmp")
-            downloadFileWithResume(voicesUrl, tmp, 26_000_000L) { dl, tot, pct ->
-                onProgress(dl, tot, (85 + pct * 0.15).toInt())
-            }
-            tmp.renameTo(voicesFile)
         }
 
         if (isKokoroInstalled()) {
