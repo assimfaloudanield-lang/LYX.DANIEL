@@ -18,11 +18,11 @@ class VoiceEngine(
     private val onPartialText: ((String) -> Unit)? = null,
     private val onText: (String) -> Unit
 ) {
-
     companion object {
         private const val TAG = "LYX_VOICE"
-        private const val SILENCE_TIMEOUT_MS = 450L
-        private const val PROCESSING_TIMEOUT_MS = 8000L
+        // Latência ultra baixa: 200ms de silêncio para disparo instantâneo
+        private const val SILENCE_TIMEOUT_MS = 200L
+        private const val PROCESSING_TIMEOUT_MS = 5000L
         private const val LISTENING_MAX_IDLE_MS = 25000L
     }
 
@@ -47,112 +47,69 @@ class VoiceEngine(
     private var isPowerActive = false
 
     private var lastRecognizedText: String = ""
-    private var hasDispatchedThisTurn = false
-    private var isUserSpeaking = false
+    private var isUserSpeaking: Boolean = false
+    private var hasDispatchedThisTurn: Boolean = false
 
-    fun getCurrentState(): State = currentState
-
-    fun logTransition(name: String) {
-        Log.i(TAG, "VOICE: $name")
-        Log.i("LYX_PIPELINE", "VOICE: $name")
-    }
-
-    fun transitionTo(newState: State, reason: String = "") {
-        mainHandler.post {
-            if (currentState == newState && newState != State.IDLE) return@post
-            currentState = newState
-
-            when (newState) {
-                State.IDLE -> {
-                    logTransition("IDLE")
-                    logTransition("STATE_IDLE")
-                    cancelAllWatchdogs()
-                    isUserSpeaking = false
-                    lastRecognizedText = ""
-                    hasDispatchedThisTurn = false
-                    try {
-                        recognizer?.cancel()
-                    } catch (e: Exception) {
-                        logTransition("VOICE_ERROR")
-                    }
-                    muteSystemSounds(false)
-
-                    // Se a assistente estiver ativa, reabre LISTENING após breve proteção de áudio
-                    if (isPowerActive) {
-                        mainHandler.postDelayed({
-                            if (isPowerActive && currentState == State.IDLE) {
-                                transitionTo(State.LISTENING)
-                            }
-                        }, 300L)
-                    }
-                }
-                State.LISTENING -> {
-                    logTransition("LISTENING")
-                    cancelAllWatchdogs()
-                    isUserSpeaking = false
-                    lastRecognizedText = ""
-                    hasDispatchedThisTurn = false
-                    muteSystemSounds(true)
-                    startListeningInternal()
-                    startListeningStallWatchdog()
-                }
-                State.PROCESSING -> {
-                    logTransition("PROCESSING")
-                    logTransition("PROCESSING_START")
-                    cancelAllWatchdogs()
-                    try {
-                        recognizer?.cancel()
-                    } catch (e: Exception) {
-                        logTransition("VOICE_ERROR")
-                    }
-                    startProcessingWatchdog()
-                }
-                State.SPEAKING -> {
-                    logTransition("SPEAKING")
-                    cancelAllWatchdogs()
-                    try {
-                        recognizer?.cancel()
-                    } catch (e: Exception) {}
-                }
-            }
-        }
-    }
-
-    // --- WATCHDOGS ANTI-FROZEN ---
     private val silenceWatchdogRunnable = Runnable {
-        if (currentState == State.LISTENING && isUserSpeaking && lastRecognizedText.isNotBlank() && !hasDispatchedThisTurn) {
-            logTransition("SPEECH_END")
-            try {
-                recognizer?.stopListening()
-            } catch (e: Exception) {}
-
-            mainHandler.postDelayed({
-                if (currentState == State.LISTENING && !hasDispatchedThisTurn && lastRecognizedText.isNotBlank()) {
-                    dispatchResult(lastRecognizedText)
-                }
-            }, 80L)
+        if (currentState == State.LISTENING && !hasDispatchedThisTurn && lastRecognizedText.isNotBlank()) {
+            logTransition("SILENCE_WATCHDOG_TRIGGERED")
+            dispatchResult(lastRecognizedText)
         }
     }
 
     private val processingTimeoutRunnable = Runnable {
         if (currentState == State.PROCESSING) {
-            logTransition("ERROR")
-            Log.e(TAG, "Processing timeout: returning to IDLE")
-            transitionTo(State.IDLE)
+            logTransition("PROCESSING_TIMEOUT_FORCE_LISTENING")
+            transitionTo(State.LISTENING)
         }
     }
 
     private val listeningStallRunnable = Runnable {
         if (currentState == State.LISTENING && !isUserSpeaking) {
-            try {
-                recognizer?.cancel()
+            logTransition("LISTENING_STALL_RESTART")
+            safeRestartListening(100L)
+        }
+    }
+
+    fun getCurrentState(): State = currentState
+
+    fun transitionTo(newState: State) {
+        if (currentState == newState) return
+        val oldState = currentState
+        currentState = newState
+        logTransition("STATE_CHANGE: $oldState -> $newState")
+
+        when (newState) {
+            State.IDLE -> {
+                cancelAllWatchdogs()
+                muteSystemSounds(false)
+                destroyRecognizer()
+                hasDispatchedThisTurn = false
+            }
+            State.LISTENING -> {
+                cancelAllWatchdogs()
+                muteSystemSounds(true)
+                ensureRecognizer()
                 startListeningInternal()
-            } catch (e: Exception) {
-                logTransition("ERROR")
-                Log.e(TAG, "Listening stall recovery error: ${e.message}")
-                transitionTo(State.IDLE)
+                startListeningStallWatchdog()
+            }
+            State.PROCESSING -> {
+                cancelSilenceTimer()
+                muteSystemSounds(false)
+                try {
+                    recognizer?.stopListening()
+                } catch (e: Exception) {}
+                startProcessingWatchdog()
+            }
+            State.SPEAKING -> {
+                cancelAllWatchdogs()
+                muteSystemSounds(false)
             }
         }
+    }
+
+    private fun logTransition(msg: String) {
+        Log.i(TAG, "STATE: $msg")
     }
 
     private fun resetSilenceTimer() {
@@ -183,16 +140,12 @@ class VoiceEngine(
     private fun dispatchResult(text: String) {
         val cleanText = text.trim()
         if (cleanText.isBlank() || hasDispatchedThisTurn) return
-
         hasDispatchedThisTurn = true
-        isUserSpeaking = false
-        cancelSilenceTimer()
+        cancelAllWatchdogs()
 
-        logTransition("STT_FINAL")
-        Log.i(TAG, "VOICE: STT_FINAL = \"$cleanText\"")
-        Log.i("LYX_PIPELINE", "VOICE: STT_FINAL = \"$cleanText\"")
-        
         transitionTo(State.PROCESSING)
+
+        logTransition("VOICE_DISPATCH_TRIGGERED: $cleanText")
         onText(cleanText)
     }
 
@@ -227,12 +180,10 @@ class VoiceEngine(
     fun start() {
         mainHandler.post {
             if (!SpeechRecognizer.isRecognitionAvailable(context)) {
-                logTransition("ERROR")
                 Log.e(TAG, "Speech recognition not available on device")
                 transitionTo(State.IDLE)
                 return@post
             }
-
             isPowerActive = true
             ensureRecognizer()
             transitionTo(State.LISTENING)
@@ -249,17 +200,15 @@ class VoiceEngine(
                             val texto = results
                                 ?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
                                 ?.firstOrNull() ?: lastRecognizedText
-
                             if (!texto.isNullOrBlank()) {
                                 dispatchResult(texto)
                             } else if (currentState == State.LISTENING && !hasDispatchedThisTurn) {
-                                safeRestartListening(250)
+                                safeRestartListening(100)
                             }
                         }
 
                         override fun onError(error: Int) {
                             cancelSilenceTimer()
-                            logTransition("VOICE_ERROR")
                             if (currentState != State.LISTENING || hasDispatchedThisTurn) return
 
                             if (lastRecognizedText.isNotBlank()) {
@@ -270,37 +219,27 @@ class VoiceEngine(
                             if (error == SpeechRecognizer.ERROR_RECOGNIZER_BUSY || error == SpeechRecognizer.ERROR_CLIENT) {
                                 try {
                                     recognizer?.cancel()
-                                } catch (e: Exception) {
-                                    logTransition("VOICE_ERROR")
-                                }
+                                } catch (e: Exception) {}
                             }
 
                             val delayMs = when (error) {
-                                SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> 300L
-                                SpeechRecognizer.ERROR_NO_MATCH -> 300L
-                                SpeechRecognizer.ERROR_RECOGNIZER_BUSY -> 400L
+                                SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> 150L
+                                SpeechRecognizer.ERROR_NO_MATCH -> 150L
+                                SpeechRecognizer.ERROR_RECOGNIZER_BUSY -> 250L
                                 SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> {
-                                    logTransition("ERROR")
-                                    logTransition("VOICE_ERROR")
                                     Log.e(TAG, "Insufficient audio permissions")
                                     transitionTo(State.IDLE)
                                     return
                                 }
-                                else -> 350L
+                                else -> 200L
                             }
-
                             safeRestartListening(delayMs)
                         }
 
-                        override fun onReadyForSpeech(params: Bundle?) {
-                            logTransition("STT_START")
-                        }
+                        override fun onReadyForSpeech(params: Bundle?) {}
 
                         override fun onBeginningOfSpeech() {
                             isUserSpeaking = true
-                            logTransition("SPEECH_START")
-                            logTransition("VAD_SPEECH_START")
-
                             if (currentState == State.SPEAKING) {
                                 triggerBargeIn()
                             }
@@ -311,14 +250,13 @@ class VoiceEngine(
                         override fun onBufferReceived(buffer: ByteArray?) {}
 
                         override fun onEndOfSpeech() {
-                            logTransition("SPEECH_END")
-                            logTransition("VAD_SPEECH_END")
+                            // Ao terminar de falar, se já houver transcrição parcial, dispara imediatamente
                             if (lastRecognizedText.isNotBlank()) {
-                                mainHandler.postDelayed({
+                                mainHandler.post {
                                     if (currentState == State.LISTENING && !hasDispatchedThisTurn && lastRecognizedText.isNotBlank()) {
                                         dispatchResult(lastRecognizedText)
                                     }
-                                }, 80L)
+                                }
                             }
                         }
 
@@ -330,7 +268,6 @@ class VoiceEngine(
                             if (!partial.isNullOrBlank()) {
                                 isUserSpeaking = true
                                 lastRecognizedText = partial
-                                logTransition("STT_PARTIAL")
                                 onInterruption?.invoke()
                                 onPartialText?.invoke(partial)
                                 resetSilenceTimer()
@@ -341,7 +278,6 @@ class VoiceEngine(
                     })
                 }
             } catch (e: Exception) {
-                logTransition("ERROR")
                 Log.e(TAG, "Fail to instantiate SpeechRecognizer: ${e.message}")
                 transitionTo(State.IDLE)
             }
@@ -365,19 +301,15 @@ class VoiceEngine(
             putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
             putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
             putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, SILENCE_TIMEOUT_MS)
-            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, 300L)
-            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS, 100L)
+            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, 150L)
+            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS, 50L)
         }
 
         try {
-            logTransition("MIC_START")
             recognizer?.cancel()
             recognizer?.startListening(intent)
         } catch (e: Exception) {
-            logTransition("ERROR")
-            logTransition("VOICE_ERROR")
-            Log.e(TAG, "startListening exception: ${e.message}")
-            safeRestartListening(400L)
+            safeRestartListening(250L)
         }
     }
 
