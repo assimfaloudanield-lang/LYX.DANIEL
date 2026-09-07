@@ -1,158 +1,93 @@
 package com.example.juls
 
-import java.io.File
-import android.Manifest
-import android.content.pm.PackageManager
-import android.os.Build
 import android.os.Bundle
-import android.util.Log
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.runtime.*
-import androidx.compose.ui.Modifier
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
-import com.example.juls.ui.LyxApp
-import com.example.juls.ui.LyxTheme
-import com.example.juls.ui.chat.ChatMessage
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import android.widget.Button
+import android.widget.EditText
+import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AppCompatActivity
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInClient
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.android.gms.common.api.ApiException
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.GoogleAuthProvider
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.ktx.Firebase
 
-class MainActivity : ComponentActivity() {
+class MainActivity : AppCompatActivity() {
 
-    companion object {
-        private const val TAG = "LYX_MAIN"
-        private const val PERMISSION_REQUEST_CODE = 200
-    }
-
-    private var voiceEngine: VoiceEngine? = null
-    val qwenModelManager by lazy { QwenModelManager(this) }
-    val kokoroModelManager by lazy { KokoroModelManager(this) }
-    val kokoroVoiceService by lazy { KokoroVoiceService(this, kokoroModelManager) }
-    private val lyxMemoryManager by lazy { LyxMemoryManager(this) }
-    private val qwenEngine by lazy { QwenEngine(this) }
+    private lateinit var auth: FirebaseAuth
+    private lateinit var googleSignInClient: GoogleSignInClient
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        checkPermissions()
+        setContentView(R.layout.activity_main)
 
-        setContent {
-            LyxTheme {
-                var isOn by remember { mutableStateOf(false) }
-                var isListening by remember { mutableStateOf(false) }
-                var voiceStatus by remember { mutableStateOf<String?>("Pronto") }
-                val messages = remember { mutableStateListOf<ChatMessage>() }
-                val coroutineScope = rememberCoroutineScope()
+        // 1. Inicializa Firebase Auth
+        auth = Firebase.auth
 
-                LaunchedEffect(Unit) {
-                    voiceEngine = VoiceEngine(
-                        context = this@MainActivity,
-                        onStateChanged = { listening ->
-                            isListening = listening
-                        },
-                        onVoiceRecognized = { text ->
-                            if (text.isNotBlank() && isOn) {
-                                messages.add(ChatMessage(id = System.currentTimeMillis().toString(), text = text, isUser = true))
-                                voiceStatus = "Pensando..."
-                                voiceEngine?.stop() // Pausa escuta enquanto responde para evitar loop acústico
-                                
-                                coroutineScope.launch(Dispatchers.IO) {
-                                    qwenEngine.responder(text, "[]") { reply ->
-                                        coroutineScope.launch(Dispatchers.Main) {
-                                            messages.add(ChatMessage(id = System.currentTimeMillis().toString(), text = reply, isUser = false))
-                                            voiceStatus = "Falando..."
-                                            kokoroVoiceService.speak(reply) {
-                                                coroutineScope.launch(Dispatchers.Main) {
-                                                    if (isOn) {
-                                                        voiceStatus = "Ouvindo..."
-                                                        voiceEngine?.start()
-                                                    } else {
-                                                        voiceStatus = "Pronto"
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        },
-                        onError = { err ->
-                            voiceStatus = "Erro de áudio: $err"
-                        }
-                    )
-                }
+        // 2. Configura o Google Sign-In (o Client ID é lido automaticamente do google-services.json)
+        val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+            .requestIdToken(getString(R.string.default_web_client_id)) 
+            .requestEmail()
+            .build()
+        googleSignInClient = GoogleSignIn.getClient(this, gso)
 
-                LyxApp(
-                    isOn = isOn,
-                    isListening = isListening,
-                    voiceStatus = voiceStatus,
-                    onTogglePower = {
-                        isOn = !isOn
-                        if (isOn) {
-                            voiceEngine?.start()
-                            isListening = true
-                            voiceStatus = "Ouvindo..."
-                        } else {
-                            voiceEngine?.stop()
-                            kokoroVoiceService.stop()
-                            isListening = false
-                            voiceStatus = "Desligado"
-                        }
-                    },
-                    messages = messages,
-                    onSendMessage = { text ->
-                        if (text.isNotBlank()) {
-                            messages.add(ChatMessage(id = System.currentTimeMillis().toString(), text = text, isUser = true))
-                            voiceStatus = "Pensando..."
-                            coroutineScope.launch(Dispatchers.IO) {
-                                qwenEngine.responder(text, "[]") { reply ->
-                                    coroutineScope.launch(Dispatchers.Main) {
-                                        messages.add(ChatMessage(id = System.currentTimeMillis().toString(), text = reply, isUser = false))
-                                        voiceStatus = "Falando..."
-                                        kokoroVoiceService.speak(reply) {
-                                            coroutineScope.launch(Dispatchers.Main) {
-                                                if (isOn) {
-                                                    voiceStatus = "Ouvindo..."
-                                                    voiceEngine?.start()
-                                                } else {
-                                                    voiceStatus = "Pronto"
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                )
+        // 3. Mapeia os elementos visuais
+        val campoEmail = findViewById<EditText>(R.id.editEmail)
+        val campoSenha = findViewById<EditText>(R.id.editSenha)
+        val btnLogar = findViewById<Button>(R.id.btnLogar)
+        val btnCadastrar = findViewById<Button>(R.id.btnCadastrar)
+        val btnGoogle = findViewById<Button>(R.id.btnGoogle)
+
+        // 4. Ações de E-mail/Senha
+        btnCadastrar.setOnClickListener {
+            cadastrar(campoEmail.text.toString(), campoSenha.text.toString())
+        }
+        btnLogar.setOnClickListener {
+            logar(campoEmail.text.toString(), campoSenha.text.toString())
+        }
+
+        // 5. Retorno do fluxo de login do Google
+        val googleLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
+            try {
+                val account = task.getResult(ApiException::class.java)!!
+                firebaseAuthWithGoogle(account.idToken!!)
+            } catch (e: Exception) {
+                showToast("Erro no Google Sign-In: ${e.message}")
             }
         }
-    }
 
-    private fun checkPermissions() {
-        val permissions = mutableListOf(
-            Manifest.permission.RECORD_AUDIO,
-            Manifest.permission.INTERNET
-        )
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            permissions.add(Manifest.permission.POST_NOTIFICATIONS)
-        }
-        
-        val needed = permissions.filter { 
-            ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED 
-        }
-        
-        if (needed.isNotEmpty()) {
-            ActivityCompat.requestPermissions(this, needed.toTypedArray(), PERMISSION_REQUEST_CODE)
+        btnGoogle.setOnClickListener {
+            googleLauncher.launch(googleSignInClient.signInIntent)
         }
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        voiceEngine?.stop()
-        kokoroVoiceService.stop()
+    private fun cadastrar(email: String, deSenha: String) {
+        if (email.isEmpty() || deSenha.isEmpty()) return showToast("Preencha os campos!")
+        auth.createUserWithEmailAndPassword(email, deSenha)
+            .addOnCompleteListener(this) { task ->
+                if (task.isSuccessful) showToast("Conta criada!") else showToast("Erro: ${task.exception?.message}")
+            }
     }
+
+    private fun logar(email: String, deSenha: String) {
+        if (email.isEmpty() || deSenha.isEmpty()) return showToast("Preencha os campos!")
+        auth.signInWithEmailAndPassword(email, deSenha)
+            .addOnCompleteListener(this) { task ->
+                if (task.isSuccessful) showToast("Conectado com Sucesso!") else showToast("Erro: ${task.exception?.message}")
+            }
+    }
+
+    private fun firebaseAuthWithGoogle(idToken: String) {
+        val credential = GoogleAuthProvider.getCredential(idToken, null)
+        auth.signInWithCredential(credential)
+            .addOnCompleteListener(this) { task ->
+                if (task.isSuccessful) showToast("Logado com o Google!") else showToast("Erro no Firebase: ${task.exception?.message}")
+            }
+    }
+
+    private fun showToast(msg: String) = Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
 }
