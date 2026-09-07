@@ -1,51 +1,47 @@
-name: Build Android APK (LYX Hybrid)
+name: Build Android APK (LYX Native)
 
 on:
+  push:
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js (v22 LTS)
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22.x'
-          cache: 'npm'
-
-      - name: Setup Java (Zulu 21)
+      - name: Setup Java (Zulu 17)
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
-          java-version: '21'
+          java-version: '17'
 
-      - name: Install Dependencies
-        run: npm install
+      - name: Setup Android NDK
+        uses: nttld/setup-ndk@v1
+        with:
+          ndk-version: r26b
+          link-to-sdk: true
 
-      - name: Build Web App
-        run: npm run build
+      - name: Setup CMake
+        uses: jwlawson/actions-setup-cmake@v2
+        with:
+          cmake-version: '3.22.1'
 
-      - name: Inject Web App into Native Android
-        run: |
-          mkdir -p android/app/src/main/assets/public
-          cp -r dist/* android/app/src/main/assets/public/
-
-      - name: Fix Gradle OOM & Permissions
+      - name: Fix Gradle Permissions & Memory
         working-directory: ./android
         run: |
           echo "org.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g" >> gradle.properties
           chmod +x ./gradlew
 
-      - name: Compile Android APK (Debug)
+      - name: Compile Native Android APK (Debug)
         working-directory: ./android
-        run: ./gradlew assembleDebug
+        run: ./gradlew assembleDebug --stacktrace
 
       - name: Upload Finished APK
         uses: actions/upload-artifact@v4
         with:
-          name: lyx-app-android
+          name: LYX-app-debug
           path: android/app/build/outputs/apk/debug/app-debug.apk
