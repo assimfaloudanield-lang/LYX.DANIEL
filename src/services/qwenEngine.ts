@@ -109,7 +109,7 @@ export class QwenEngine {
             onChunk(fallback, true, true);
             onFullReply(fallback);
           }
-        }, 2200);
+        }, 4000);
 
         (window as any).onQwenResponse = (window as any).onNativeResponse = (resposta: string) => {
           clearTimeout(timer);

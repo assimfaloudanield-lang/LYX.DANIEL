@@ -39,7 +39,7 @@ declare global {
       startModelDownload?: () => void;
       generateNativeResponse?: (prompt: string, historyJson: string) => void;
       speakNative?: (text: string) => void;
-      speakNativeChunk?: (text: string, isFirstChunk: boolean) => void;
+      speakNativeChunk?: (text: string, isFirstChunk: boolean, isFinal?: boolean) => void;
       stopSpeaking?: () => void;
       startListening?: () => void;
       stopListening?: () => void;
@@ -121,6 +121,8 @@ export default function App() {
   const qwenEngineRef = useRef<QwenEngine | null>(null);
   const isOnRef = useRef(isOn);
   isOnRef.current = isOn;
+  const voiceStateRef = useRef<LyxVoiceState>('IDLE');
+  const handleVoiceInputRef = useRef<((texto: string, force?: boolean) => void) | null>(null);
   const lastProcessedTextRef = useRef('');
   const lastProcessedTimeRef = useRef(0);
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -130,6 +132,7 @@ export default function App() {
   // Sincroniza estado global do VoiceStateMachine
   useEffect(() => {
     const unsub = lyxStateMachine.subscribe((newState) => {
+      voiceStateRef.current = newState;
       setVoiceState(newState);
     });
     return unsub;
@@ -202,7 +205,7 @@ export default function App() {
     voiceEngineRef.current?.setLanguage(newLang);
   };
 
-  const handleStyleSelect = (style: VoiceStyleOption) => {
+  const handleStyleSelect = (style: any) => {
     setSelectedStyleId(style.id);
     localStorage.setItem('lyx_voice_style', style.id);
     julsServiceRef.current?.setPitchAndRate(style.pitch, style.rate);
@@ -239,7 +242,8 @@ export default function App() {
     hasProactedThisSilenceRef.current = false;
 
     // Se já estiver processando ou falando, ignora para não encadear frases
-    if (voiceState === 'PROCESSING' || voiceState === 'SPEAKING' || julsServiceRef.current?.isSpeaking) {
+    const currentVState = voiceStateRef.current;
+    if (currentVState === 'PROCESSING' || currentVState === 'SPEAKING' || julsServiceRef.current?.isSpeaking) {
       console.log('[GATE] should_respond: false (already processing or speaking)');
       return;
     }
@@ -263,8 +267,8 @@ export default function App() {
 
     // Watchdog de segurança resiliente: nunca deixa a LYX travada
     const watchdog = setTimeout(() => {
-      if (voiceState === 'PROCESSING') {
-        if (voiceState !== 'IDLE') {
+      if ((voiceState as string) === 'PROCESSING') {
+        if ((voiceState as string) !== 'IDLE') {
           lyxStateMachine.transition('LISTENING');
           if (window.AndroidBridge?.startListening) {
             window.AndroidBridge.startListening();
@@ -300,7 +304,7 @@ export default function App() {
           isFirstSpokenChunk = false;
         } else if (!window.AndroidBridge) {
           julsServiceRef.current?.speakChunk(sentenceChunk, isFirstSpokenChunk, isFinal, () => {
-            if (voiceState !== 'IDLE' && !abortControllerRef.current?.signal.aborted) {
+            if ((voiceState as string) !== 'IDLE' && !abortControllerRef.current?.signal.aborted) {
               voiceEngineRef.current?.start();
             }
           });
@@ -341,7 +345,7 @@ export default function App() {
         const onDone = () => {
           // Pequeno resguardo para o som do alto-falante cessar completamente antes de reabrir o microfone
           setTimeout(() => {
-            if (voiceState !== 'IDLE' && !abortControllerRef.current?.signal.aborted) {
+            if ((voiceState as string) !== 'IDLE' && !abortControllerRef.current?.signal.aborted) {
               if (window.AndroidBridge?.startListening) {
                 window.AndroidBridge.startListening();
               } else {
@@ -352,7 +356,7 @@ export default function App() {
               if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
               silenceTimerRef.current = setTimeout(() => {
                 if (
-                  voiceState === 'LISTENING' &&
+                  (voiceState as string) === 'LISTENING' &&
                   !hasProactedThisSilenceRef.current &&
                   globalMessages.length >= 2
                 ) {
@@ -383,7 +387,7 @@ export default function App() {
                     });
 
                     const onProactiveDone = () => {
-                      if (voiceState !== 'IDLE') {
+                      if ((voiceState as string) !== 'IDLE') {
                         lyxStateMachine.transition('LISTENING');
                         if (window.AndroidBridge?.startListening) {
                           window.AndroidBridge.startListening();
@@ -411,7 +415,7 @@ export default function App() {
         if (window.AndroidBridge?.speakNative) {
           const wordCount = fullResposta.split(/\s+/).length;
           setTimeout(() => {
-            if (voiceState !== 'IDLE' && !abortControllerRef.current?.signal.aborted) {
+            if ((voiceState as string) !== 'IDLE' && !abortControllerRef.current?.signal.aborted) {
               onDone();
             }
           }, Math.max(1200, wordCount * 280));
@@ -424,6 +428,8 @@ export default function App() {
       abortControllerRef.current.signal
     );
   }, [selectedStyleId]);
+
+  handleVoiceInputRef.current = handleVoiceInput;
 
   // Initialize Juls Voice Service, Qwen Engine & Voice Engine
   useEffect(() => {
@@ -560,7 +566,11 @@ export default function App() {
       }, 3500);
     };
 
+    const prevOnError = window.onModelDownloadError;
     window.onModelDownloadError = (errorMsg: string) => {
+      if (typeof prevOnError === 'function' && prevOnError !== window.onModelDownloadError) {
+        try { prevOnError(errorMsg); } catch {}
+      }
       setModelDownload((prev) => ({
         ...prev,
         isDownloading: false,
@@ -674,7 +684,11 @@ export default function App() {
     };
 
     window.onVoiceRecognized = (recognizedText: string) => {
-      handleVoiceInput(recognizedText);
+      if (handleVoiceInputRef.current) {
+        handleVoiceInputRef.current(recognizedText);
+      } else {
+        handleVoiceInput(recognizedText);
+      }
     };
 
     return () => {

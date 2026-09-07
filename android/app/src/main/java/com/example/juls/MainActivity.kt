@@ -117,12 +117,12 @@ class MainActivity : ComponentActivity() {
                             evalJs("if(window.onUserInterrupted) window.onUserInterrupted();")
                         },
                         onPartialText = { partial ->
-                            val safeStr = partial.replace("'", "\'")
-                            evalJs("if(window.onVoicePartialRecognized) window.onVoicePartialRecognized('$safeStr');")
+                            val jsonStr = org.json.JSONObject.quote(partial)
+                            evalJs("if(window.onVoicePartialRecognized) window.onVoicePartialRecognized(" + jsonStr + ");")
                         },
                         onText = { final ->
-                            val safeStr = final.replace("'", "\'")
-                            evalJs("if(window.onVoiceRecognized) window.onVoiceRecognized('$safeStr');")
+                            val jsonStr = org.json.JSONObject.quote(final)
+                            evalJs("if(window.onVoiceRecognized) window.onVoiceRecognized(" + jsonStr + ");")
                         }
                     )
                 }
@@ -168,8 +168,8 @@ class MainActivity : ComponentActivity() {
             CoroutineScope(Dispatchers.IO).launch {
                 qwen.responder(prompt, historyJson) { response ->
                     CoroutineScope(Dispatchers.Main).launch {
-                        val safeRes = response.replace("'", "\\\\'")
-                        evalJs("if(window.onQwenResponse) window.onQwenResponse('$safeRes');")
+                        val jsonRes = org.json.JSONObject.quote(response)
+                        evalJs("if(window.onQwenResponse) window.onQwenResponse(" + jsonRes + ");")
                     }
                 }
             }
