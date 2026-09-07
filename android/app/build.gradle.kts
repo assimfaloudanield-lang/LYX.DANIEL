@@ -56,7 +56,6 @@ dependencies {
     implementation("androidx.appcompat:appcompat:1.6.1")
     implementation("androidx.activity:activity-ktx:1.8.2")
     implementation("androidx.activity:activity-compose:1.8.2")
-    implementation("androidx.webkit:webkit:1.10.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.0")
 
     // AndroidX Credentials Manager & Google ID (Modern Auth)
