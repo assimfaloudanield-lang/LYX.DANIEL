@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    namespace = "com.example.juls"
+    namespace = "LYX.app"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.example.juls"
+        applicationId = "LYX.app"
         minSdk = 26
         targetSdk = 34
         versionCode = 1
@@ -58,6 +58,11 @@ dependencies {
     implementation("androidx.activity:activity-compose:1.8.2")
     implementation("androidx.webkit:webkit:1.10.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.0")
+
+    // AndroidX Credentials Manager & Google ID (Modern Auth)
+    implementation("androidx.credentials:credentials:1.3.0")
+    implementation("androidx.credentials:credentials-play-services-auth:1.3.0")
+    implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
 
     // Compose
     val composeBom = platform("androidx.compose:compose-bom:2024.02.00")

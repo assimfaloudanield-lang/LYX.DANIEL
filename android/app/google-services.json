@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "701777326762",
+    "project_id": "gen-lang-client-0873635171",
+    "storage_bucket": "gen-lang-client-0873635171.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:701777326762:android:2cd501a916fc49bddd96d3",
+        "android_client_info": {
+          "package_name": "LYX.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "701777326762-ct9uj9nfelfjkl4e46tj2bdglkhb67fv.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "LYX.app",
+            "certificate_hash": "869d1aa048fd53a83d9bbb5e6d070d68589eafe6"
+          }
+        },
+        {
+          "client_id": "701777326762-rbit606dnl9i871miu9gulvsqgc3vn84.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA2K6fZ8bkba5PLINJUnPAGlHwhg9V-wKM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "701777326762-rbit606dnl9i871miu9gulvsqgc3vn84.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
