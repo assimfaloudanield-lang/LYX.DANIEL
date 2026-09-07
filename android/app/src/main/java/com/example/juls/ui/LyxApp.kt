@@ -6,6 +6,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.juls.ui.chat.ChatScreen
 import com.example.juls.ui.chat.ChatMessage
+import com.example.juls.ui.profile.ProfileScreen
 import com.example.juls.ui.settings.SettingsScreen
 
 @Composable
@@ -20,7 +21,8 @@ fun LyxApp(
     val navController = rememberNavController()
 
     NavHost(navController = navController, startDestination = "auth") {
-                composable("auth") {
+        
+        composable("auth") {
             AuthScreen(
                 onLoginSuccess = { 
                     navController.navigate("home") {
@@ -37,13 +39,22 @@ fun LyxApp(
                 voiceStatus = voiceStatus,
                 onTogglePower = onTogglePower,
                 onNavigateToChat = { navController.navigate("chat") },
-                onNavigateToProfile = { /* To be implemented */ },
+                onNavigateToProfile = { navController.navigate("profile") },
                 onNavigateToSettings = { navController.navigate("settings") }
             )
         }
         
+        composable("profile") {
+            ProfileScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToSettings = { navController.navigate("settings") }
+            )
+        }
+
         composable("chat") {
-            ChatScreen(isListening = isListening, onToggleMic = onTogglePower, 
+            ChatScreen(
+                isListening = isListening,
+                onToggleMic = onTogglePower,
                 messages = messages,
                 onSendMessage = onSendMessage,
                 onNavigateBack = { navController.popBackStack() }
