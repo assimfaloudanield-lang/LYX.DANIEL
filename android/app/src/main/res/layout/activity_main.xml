@@ -54,10 +54,20 @@
         android:id="@+id/btnCadastrar"
         android:layout_width="match_parent"
         android:layout_height="50dp"
-        android:layout_marginBottom="24dp"
+        android:layout_marginBottom="12dp"
         android:backgroundTint="#25FFFFFF"
         android:text="Criar Conta"
         android:textColor="#FFFFFF" />
+
+    <Button
+        android:id="@+id/btnRecuperarSenha"
+        android:layout_width="match_parent"
+        android:layout_height="44dp"
+        android:layout_marginBottom="16dp"
+        android:background="@android:color/transparent"
+        android:text="Esqueci minha senha"
+        android:textColor="#AAAAAA"
+        android:textSize="14sp" />
 
     <Button
         android:id="@+id/btnGoogle"

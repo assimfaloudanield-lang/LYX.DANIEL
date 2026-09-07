@@ -35,6 +35,7 @@ class MainActivity : AppCompatActivity() {
         val campoSenha = findViewById<EditText>(R.id.editSenha)
         val btnLogar = findViewById<Button>(R.id.btnLogar)
         val btnCadastrar = findViewById<Button>(R.id.btnCadastrar)
+        val btnRecuperarSenha = findViewById<Button>(R.id.btnRecuperarSenha)
         val btnGoogle = findViewById<Button>(R.id.btnGoogle)
 
         // 3. Ações para E-mail e Senha
@@ -43,6 +44,9 @@ class MainActivity : AppCompatActivity() {
         }
         btnLogar.setOnClickListener {
             logar(campoEmail.text.toString().trim(), campoSenha.text.toString().trim())
+        }
+        btnRecuperarSenha.setOnClickListener {
+            recuperarSenha(campoEmail.text.toString().trim())
         }
 
         // 4. Fluxo moderno CredentialManager + GetGoogleIdOption
@@ -91,7 +95,11 @@ class MainActivity : AppCompatActivity() {
         if (email.isEmpty() || deSenha.isEmpty()) return showToast("Preencha todos os campos!")
         auth.createUserWithEmailAndPassword(email, deSenha)
             .addOnCompleteListener(this) { task ->
-                if (task.isSuccessful) showToast("Conta criada com sucesso!") else showToast("Erro: ${task.exception?.message}")
+                if (task.isSuccessful) {
+                    showToast("Conta criada com sucesso!")
+                } else {
+                    showToast("Erro: ${task.exception?.message}")
+                }
             }
     }
 
@@ -99,7 +107,23 @@ class MainActivity : AppCompatActivity() {
         if (email.isEmpty() || deSenha.isEmpty()) return showToast("Preencha todos os campos!")
         auth.signInWithEmailAndPassword(email, deSenha)
             .addOnCompleteListener(this) { task ->
-                if (task.isSuccessful) showToast("Conectado com Sucesso!") else showToast("Erro: ${task.exception?.message}")
+                if (task.isSuccessful) {
+                    showToast("Conectado com Sucesso!")
+                } else {
+                    showToast("Erro: ${task.exception?.message}")
+                }
+            }
+    }
+
+    private fun recuperarSenha(email: String) {
+        if (email.isEmpty()) return showToast("Informe o seu e-mail para recuperar a senha!")
+        auth.sendPasswordResetEmail(email)
+            .addOnCompleteListener(this) { task ->
+                if (task.isSuccessful) {
+                    showToast("E-mail de recuperação enviado! Verifique sua caixa de entrada.")
+                } else {
+                    showToast("Erro ao recuperar senha: ${task.exception?.message}")
+                }
             }
     }
 
@@ -107,7 +131,12 @@ class MainActivity : AppCompatActivity() {
         val credential = GoogleAuthProvider.getCredential(idToken, null)
         auth.signInWithCredential(credential)
             .addOnCompleteListener(this) { task ->
-                if (task.isSuccessful) showToast("Logado com o Google!") else showToast("Erro no Firebase: ${task.exception?.message}")
+                if (task.isSuccessful) {
+                    val user = auth.currentUser
+                    showToast("Logado com o Google: ${user?.displayName ?: user?.email}")
+                } else {
+                    showToast("Erro no Firebase: ${task.exception?.message}")
+                }
             }
     }
 
