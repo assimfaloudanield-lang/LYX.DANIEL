@@ -1,144 +1,127 @@
 package com.example.juls
 
+import android.Manifest
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
-import android.widget.Button
-import android.widget.EditText
 import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
-import androidx.credentials.CredentialManager
-import androidx.credentials.GetCredentialRequest
-import androidx.credentials.exceptions.GetCredentialException
-import androidx.lifecycle.lifecycleScope
-import com.google.android.libraries.identity.googleid.GetGoogleIdOption
-import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.GoogleAuthProvider
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.Surface
+import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.core.content.ContextCompat
+import com.example.juls.ui.LyxApp
+import com.example.juls.ui.LyxTheme
+import com.example.juls.ui.chat.ChatMessage
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
-import kotlinx.coroutines.launch
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : ComponentActivity() {
 
-    private lateinit var auth: FirebaseAuth
-    private lateinit var credentialManager: CredentialManager
+    private var isOn by mutableStateOf(false)
+    private var isListening by mutableStateOf(false)
+    private var voiceStatus by mutableStateOf<String?>(null)
+    private val messages = mutableStateListOf<ChatMessage>()
+
+    private val requestPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        val recordAudioGranted = permissions[Manifest.permission.RECORD_AUDIO] ?: false
+        if (recordAudioGranted) {
+            startVoiceAssistant()
+        } else {
+            Toast.makeText(this, "Permissão de microfone necessária para a voz da LYX", Toast.LENGTH_SHORT).show()
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
 
-        // 1. Inicializa o Firebase Auth
-        auth = Firebase.auth
-        credentialManager = CredentialManager.create(this)
-
-        // 2. Mapeia os elementos do layout (XML)
-        val campoEmail = findViewById<EditText>(R.id.editEmail)
-        val campoSenha = findViewById<EditText>(R.id.editSenha)
-        val btnLogar = findViewById<Button>(R.id.btnLogar)
-        val btnCadastrar = findViewById<Button>(R.id.btnCadastrar)
-        val btnRecuperarSenha = findViewById<Button>(R.id.btnRecuperarSenha)
-        val btnGoogle = findViewById<Button>(R.id.btnGoogle)
-
-        // 3. Ações para E-mail e Senha
-        btnCadastrar.setOnClickListener {
-            cadastrar(campoEmail.text.toString().trim(), campoSenha.text.toString().trim())
-        }
-        btnLogar.setOnClickListener {
-            logar(campoEmail.text.toString().trim(), campoSenha.text.toString().trim())
-        }
-        btnRecuperarSenha.setOnClickListener {
-            recuperarSenha(campoEmail.text.toString().trim())
-        }
-
-        // 4. Fluxo moderno CredentialManager + GetGoogleIdOption
-        btnGoogle.setOnClickListener {
-            realizarGoogleSignIn()
-        }
-    }
-
-    private fun realizarGoogleSignIn() {
-        lifecycleScope.launch {
-            try {
-                val serverClientId = getString(R.string.default_web_client_id)
-                val googleIdOption = GetGoogleIdOption.Builder()
-                    .setFilterByAuthorizedAccounts(false)
-                    .setServerClientId(serverClientId)
-                    .setAutoSelectEnabled(false)
-                    .build()
-
-                val request = GetCredentialRequest.Builder()
-                    .addCredentialOption(googleIdOption)
-                    .build()
-
-                val result = credentialManager.getCredential(
-                    request = request,
-                    context = this@MainActivity
-                )
-
-                val credential = result.credential
-                if (credential is androidx.credentials.CustomCredential &&
-                    credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL
+        setContent {
+            LyxTheme {
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = Color(0xFF03010A)
                 ) {
-                    val googleIdToken = GoogleIdTokenCredential.createFrom(credential.data)
-                    firebaseAuthWithGoogle(googleIdToken.idToken)
-                } else {
-                    showToast("Tipo de credencial não suportado.")
+                    LyxApp(
+                        isOn = isOn,
+                        isListening = isListening,
+                        voiceStatus = voiceStatus,
+                        onTogglePower = { togglePower() },
+                        messages = messages,
+                        onSendMessage = { text -> handleSendMessage(text) }
+                    )
                 }
-            } catch (e: GetCredentialException) {
-                showToast("Falha no login Google: ${e.message}")
-            } catch (e: Exception) {
-                showToast("Erro: ${e.message}")
             }
         }
     }
 
-    private fun cadastrar(email: String, deSenha: String) {
-        if (email.isEmpty() || deSenha.isEmpty()) return showToast("Preencha todos os campos!")
-        auth.createUserWithEmailAndPassword(email, deSenha)
-            .addOnCompleteListener(this) { task ->
-                if (task.isSuccessful) {
-                    showToast("Conta criada com sucesso!")
-                } else {
-                    showToast("Erro: ${task.exception?.message}")
-                }
-            }
+    private fun togglePower() {
+        if (isOn) {
+            stopVoiceAssistant()
+        } else {
+            checkAndRequestPermissions()
+        }
     }
 
-    private fun logar(email: String, deSenha: String) {
-        if (email.isEmpty() || deSenha.isEmpty()) return showToast("Preencha todos os campos!")
-        auth.signInWithEmailAndPassword(email, deSenha)
-            .addOnCompleteListener(this) { task ->
-                if (task.isSuccessful) {
-                    showToast("Conectado com Sucesso!")
-                } else {
-                    showToast("Erro: ${task.exception?.message}")
-                }
-            }
+    private fun checkAndRequestPermissions() {
+        val permissionsToRequest = mutableListOf(Manifest.permission.RECORD_AUDIO)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            permissionsToRequest.add(Manifest.permission.POST_NOTIFICATIONS)
+        }
+
+        val allGranted = permissionsToRequest.all {
+            ContextCompat.checkSelfPermission(this, it) == PackageManager.PERMISSION_GRANTED
+        }
+
+        if (allGranted) {
+            startVoiceAssistant()
+        } else {
+            requestPermissionLauncher.launch(permissionsToRequest.toTypedArray())
+        }
     }
 
-    private fun recuperarSenha(email: String) {
-        if (email.isEmpty()) return showToast("Informe o seu e-mail para recuperar a senha!")
-        auth.sendPasswordResetEmail(email)
-            .addOnCompleteListener(this) { task ->
-                if (task.isSuccessful) {
-                    showToast("E-mail de recuperação enviado! Verifique sua caixa de entrada.")
-                } else {
-                    showToast("Erro ao recuperar senha: ${task.exception?.message}")
-                }
-            }
+    private fun startVoiceAssistant() {
+        isOn = true
+        isListening = true
+        voiceStatus = "Ouvindo você..."
+
+        val intent = Intent(this, JulsVoiceService::class.java).apply {
+            action = JulsVoiceService.ACTION_START
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForegroundService(intent)
+        } else {
+            startService(intent)
+        }
     }
 
-    private fun firebaseAuthWithGoogle(idToken: String) {
-        val credential = GoogleAuthProvider.getCredential(idToken, null)
-        auth.signInWithCredential(credential)
-            .addOnCompleteListener(this) { task ->
-                if (task.isSuccessful) {
-                    val user = auth.currentUser
-                    showToast("Logado com o Google: ${user?.displayName ?: user?.email}")
-                } else {
-                    showToast("Erro no Firebase: ${task.exception?.message}")
-                }
-            }
+    private fun stopVoiceAssistant() {
+        isOn = false
+        isListening = false
+        voiceStatus = null
+
+        val intent = Intent(this, JulsVoiceService::class.java).apply {
+            action = JulsVoiceService.ACTION_STOP
+        }
+        startService(intent)
     }
 
-    private fun showToast(msg: String) = Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
+    private fun handleSendMessage(text: String) {
+        messages.add(ChatMessage(text = text, isUser = true))
+        // Resposta imediata de texto pelo serviço ou engine local
+        JulsVoiceService.instance?.speak(text)
+    }
+
+    override fun onDestroy() {
+        if (isOn) {
+            stopVoiceAssistant()
+        }
+        super.onDestroy()
+    }
 }
