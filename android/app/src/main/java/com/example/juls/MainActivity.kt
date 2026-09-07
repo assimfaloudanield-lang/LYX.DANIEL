@@ -128,10 +128,12 @@ class MainActivity : ComponentActivity() {
         }
         
         @JavascriptInterface
-        fun speakNativeChunk(text: String, isFirst: Boolean) {
+        fun speakNativeChunk(text: String, isFirst: Boolean, isFinal: Boolean) {
             if (isFirst) evalJs("if(window.onSpeechStart) window.onSpeechStart();")
-            kokoroVoiceService.speakChunk(text, isFirst, false) {
-                // Done chunk callback if needed
+            kokoroVoiceService.speakChunk(text, isFirst, isFinal) {
+                if (isFinal) {
+                    evalJs("if(window.onSpeechDone) window.onSpeechDone();")
+                }
             }
         }
 

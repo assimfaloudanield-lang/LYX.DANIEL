@@ -225,9 +225,9 @@ export default function App() {
   };
 
   // Handles speech recognized by VoiceEngine through QwenEngine with loop & echo protection
-  const handleVoiceInput = useCallback((texto: string) => {
+  const handleVoiceInput = useCallback((texto: string, force: boolean = false) => {
     const clean = texto.trim();
-    if (!clean || !isOnRef.current) return;
+    if (!clean || (!isOnRef.current && !force)) return;
 
     // Cancela o timer de silêncio pois o usuário falou
     console.log('[GATE] input_received: "' + clean + '"');
@@ -293,7 +293,7 @@ export default function App() {
         console.log('[TTS] chunk_sent_to_bridge: "' + sentenceChunk + '" (isFirst: ' + isFirstSpokenChunk + ')');
 
         if (window.AndroidBridge?.speakNativeChunk) {
-          window.AndroidBridge.speakNativeChunk(formatTextForTts(sentenceChunk), isFirstSpokenChunk);
+          window.AndroidBridge.speakNativeChunk(formatTextForTts(sentenceChunk), isFirstSpokenChunk, isFinal);
           isFirstSpokenChunk = false;
         } else if (window.AndroidBridge?.speakNative && isFirst) {
           window.AndroidBridge.speakNative(formatTextForTts(sentenceChunk));
@@ -752,7 +752,7 @@ export default function App() {
         
         // Se estiver gravando audio ou texto, force uma resposta da engine
         if (qwenEngineRef.current) {
-          handleVoiceInput(text);
+          handleVoiceInput(text, true);
         }
       }}
       onClearHistoryGlobal={() => {

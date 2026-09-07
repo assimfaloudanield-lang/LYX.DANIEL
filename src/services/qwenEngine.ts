@@ -111,7 +111,7 @@ export class QwenEngine {
           }
         }, 2200);
 
-        (window as any).onNativeResponse = (resposta: string) => {
+        (window as any).onQwenResponse = (window as any).onNativeResponse = (resposta: string) => {
           clearTimeout(timer);
           if (responded || abortSignal?.aborted) return;
           responded = true;
