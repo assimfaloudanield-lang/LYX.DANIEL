@@ -54,16 +54,25 @@ class MainActivity : ComponentActivity() {
                             isListening = listening
                         },
                         onVoiceRecognized = { text ->
-                            if (text.isNotBlank()) {
+                            if (text.isNotBlank() && isOn) {
                                 messages.add(ChatMessage(id = System.currentTimeMillis().toString(), text = text, isUser = true))
                                 voiceStatus = "Pensando..."
+                                voiceEngine?.stop() // Pausa escuta enquanto responde para evitar loop acústico
+                                
                                 coroutineScope.launch(Dispatchers.IO) {
                                     qwenEngine.responder(text, "[]") { reply ->
                                         coroutineScope.launch(Dispatchers.Main) {
                                             messages.add(ChatMessage(id = System.currentTimeMillis().toString(), text = reply, isUser = false))
                                             voiceStatus = "Falando..."
                                             kokoroVoiceService.speak(reply) {
-                                                voiceStatus = "Ouvindo..."
+                                                coroutineScope.launch(Dispatchers.Main) {
+                                                    if (isOn) {
+                                                        voiceStatus = "Ouvindo..."
+                                                        voiceEngine?.start()
+                                                    } else {
+                                                        voiceStatus = "Pronto"
+                                                    }
+                                                }
                                             }
                                         }
                                     }
@@ -104,7 +113,14 @@ class MainActivity : ComponentActivity() {
                                         messages.add(ChatMessage(id = System.currentTimeMillis().toString(), text = reply, isUser = false))
                                         voiceStatus = "Falando..."
                                         kokoroVoiceService.speak(reply) {
-                                            voiceStatus = "Pronto"
+                                            coroutineScope.launch(Dispatchers.Main) {
+                                                if (isOn) {
+                                                    voiceStatus = "Ouvindo..."
+                                                    voiceEngine?.start()
+                                                } else {
+                                                    voiceStatus = "Pronto"
+                                                }
+                                            }
                                         }
                                     }
                                 }
