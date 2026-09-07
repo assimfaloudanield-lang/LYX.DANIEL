@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "LYX.app"
+    namespace = "com.example.juls"
     compileSdk = 34
 
     defaultConfig {
